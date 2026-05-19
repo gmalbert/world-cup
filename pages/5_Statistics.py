@@ -81,8 +81,8 @@ with tab_scoring:
             margin=dict(l=10, r=40, t=40, b=10),
         )
         fig_g.update_traces(texttemplate="%{text}", textposition="outside")
-        st.plotly_chart(fig_g, use_container_width=True)
-        st.dataframe(top_goal, use_container_width=True, hide_index=True)
+        st.plotly_chart(fig_g, width="stretch")
+        st.dataframe(top_goal, width="stretch", hide_index=True)
     else:
         # Fall back to API-Football
         apf_scorers = apf_client.get_top_scorers(season_sel)
@@ -108,8 +108,8 @@ with tab_scoring:
                 margin=dict(l=10, r=40, t=40, b=10),
             )
             fig_g.update_traces(texttemplate="%{text}", textposition="outside")
-            st.plotly_chart(fig_g, use_container_width=True)
-            st.dataframe(top_goal, use_container_width=True, hide_index=True)
+            st.plotly_chart(fig_g, width="stretch")
+            st.dataframe(top_goal, width="stretch", hide_index=True)
         else:
             # Derive from match data
             st.info(f"Live player stats not available for {season_sel}. Computing from match-level data…")
@@ -143,7 +143,7 @@ with tab_scoring:
                     margin=dict(l=10, r=40, t=40, b=10),
                 )
                 fig_tg.update_traces(texttemplate="%{text:.0f}", textposition="outside")
-                st.plotly_chart(fig_tg, use_container_width=True)
+                st.plotly_chart(fig_tg, width="stretch")
             else:
                 st.warning("No match data available.")
 
@@ -169,7 +169,7 @@ with tab_team:
         }
         display_ts = display_ts.rename(columns=col_rename)
         keep = [c for c in col_rename.values() if c in display_ts.columns]
-        st.dataframe(display_ts[keep], use_container_width=True, hide_index=True)
+        st.dataframe(display_ts[keep], width="stretch", hide_index=True)
 
         # Shots vs Goals chart
         if "Shots" in display_ts.columns and "GF" in display_ts.columns:
@@ -188,7 +188,7 @@ with tab_team:
                 font_color=_FC, coloraxis_showscale=False,
                 margin=dict(l=10, r=10, t=40, b=10),
             )
-            st.plotly_chart(fig_sg, use_container_width=True)
+            st.plotly_chart(fig_sg, width="stretch")
     else:
         # Derive from match data
         st.info(f"Live team stats not available — computing from loaded match data for {season_t}.")
@@ -204,7 +204,7 @@ with tab_team:
                 combined = pd.concat([home_agg, away_agg]).groupby("team").sum().reset_index()
                 combined["GD"] = combined["GF"] - combined["GA"]
                 combined = combined.sort_values("GF", ascending=False)
-                st.dataframe(combined, use_container_width=True, hide_index=True)
+                st.dataframe(combined, width="stretch", hide_index=True)
 
                 fig_td = px.bar(
                     combined.head(16),
@@ -220,7 +220,7 @@ with tab_team:
                     margin=dict(l=10, r=10, t=40, b=40),
                     xaxis=dict(tickangle=-45),
                 )
-                st.plotly_chart(fig_td, use_container_width=True)
+                st.plotly_chart(fig_td, width="stretch")
             else:
                 st.warning("No completed match data for this season.")
 
@@ -269,7 +269,7 @@ with tab_xg:
                     font_color=_FC, coloraxis_showscale=False,
                     margin=dict(l=10, r=10, t=40, b=10),
                 )
-                st.plotly_chart(fig_xg, use_container_width=True)
+                st.plotly_chart(fig_xg, width="stretch")
                 break
     else:
         # Use historical match data with model xg columns
@@ -306,7 +306,7 @@ with tab_xg:
                     font_color=_FC, coloraxis_showscale=False,
                     margin=dict(l=10, r=10, t=40, b=10),
                 )
-                st.plotly_chart(fig_xgm, use_container_width=True)
+                st.plotly_chart(fig_xgm, width="stretch")
             else:
                 st.info("xG data is available via BALLDONTLIE API for 2022 and 2026 seasons. Check API connectivity.")
         else:
@@ -364,7 +364,7 @@ with tab_history:
             paper_bgcolor=_BG, plot_bgcolor=_BG,
             font_color=_FC, margin=dict(l=10, r=10, t=40, b=10),
         )
-        st.plotly_chart(fig_gpm, use_container_width=True)
+        st.plotly_chart(fig_gpm, width="stretch")
 
         # Result distribution stacked bar
         fig_res = go.Figure()
@@ -390,7 +390,7 @@ with tab_history:
             xaxis=dict(tickvals=by_season["season"].tolist(), title="Year"),
             yaxis=dict(ticksuffix="%", range=[0, 100]),
         )
-        st.plotly_chart(fig_res, use_container_width=True)
+        st.plotly_chart(fig_res, width="stretch")
 
         # Summary table
         disp = by_season.rename(columns={
@@ -400,7 +400,7 @@ with tab_history:
         })
         st.dataframe(
             disp[["Year", "Matches", "Goals", "Goals/M", "H Win%", "Draw%", "A Win%"]],
-            use_container_width=True, hide_index=True,
+            width="stretch", hide_index=True,
         )
 
         st.divider()
@@ -434,6 +434,6 @@ with tab_history:
             margin=dict(l=10, r=40, t=40, b=10),
         )
         fig_wbt.update_traces(texttemplate="%{text}", textposition="outside")
-        st.plotly_chart(fig_wbt, use_container_width=True)
+        st.plotly_chart(fig_wbt, width="stretch")
 
 add_betting_oracle_footer()

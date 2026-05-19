@@ -115,7 +115,7 @@ with col_elo:
         height=220, paper_bgcolor=_BG, font_color=_FC,
         margin=dict(l=20, r=20, t=30, b=0),
     )
-    st.plotly_chart(fig_g, use_container_width=True)
+    st.plotly_chart(fig_g, width="stretch")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -174,7 +174,7 @@ with t1:
             mc4.metric("Goals For", int(tot["GF"]))
             mc5.metric("Goals Against", int(tot["GA"]))
 
-            st.dataframe(summary, use_container_width=True, hide_index=True)
+            st.dataframe(summary, width="stretch", hide_index=True)
 
             # Win trend chart
             if len(summary) > 1:
@@ -190,7 +190,7 @@ with t1:
                     paper_bgcolor=_BG, plot_bgcolor=_BG,
                     font_color=_FC, margin=dict(l=10, r=10, t=40, b=10),
                 )
-                st.plotly_chart(fig_wt, use_container_width=True)
+                st.plotly_chart(fig_wt, width="stretch")
 
             # Match log
             st.divider()
@@ -217,7 +217,7 @@ with t1:
                 return "background-color:#b71c1c;color:white;"
 
             styled_log = disp_log.style.map(color_result, subset=["Result"])
-            st.dataframe(styled_log, use_container_width=True, hide_index=True)
+            st.dataframe(styled_log, width="stretch", hide_index=True)
 
 
 # ── Tab 2: Current Form ───────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ with t2:
                 st.markdown("**Completed matches in 2026:**")
                 st.dataframe(completed_2026[["date", "round", "home_team",
                                              "home_goals", "away_goals", "away_team"]].head(10),
-                             use_container_width=True, hide_index=True)
+                             width="stretch", hide_index=True)
             else:
                 st.info(f"No completed 2026 World Cup matches yet for {selected_team} — tournament begins June 11.")
         else:
@@ -251,7 +251,7 @@ with t2:
         if not team_players.empty:
             st.dataframe(
                 team_players[["name", "position", "jersey_number"]].sort_values("position"),
-                use_container_width=True, hide_index=True,
+                width="stretch", hide_index=True,
             )
         else:
             st.info(f"No squad data found for {selected_team} in the BALLDONTLIE 2026 dataset.")
@@ -345,7 +345,7 @@ with t3:
         margin=dict(l=40, r=40, t=40, b=40),
         title=f"{selected_team} — Playing Style Radar",
     )
-    st.plotly_chart(fig_radar, use_container_width=True)
+    st.plotly_chart(fig_radar, width="stretch")
 
     st.caption(
         "**Trait definitions:**  \n"
@@ -402,7 +402,7 @@ with t4:
                 height=280, margin=dict(l=20, r=20, t=20, b=20),
                 showlegend=True,
             )
-            st.plotly_chart(fig_pie, use_container_width=True)
+            st.plotly_chart(fig_pie, width="stretch")
 
             h2h["date"] = pd.to_datetime(h2h["date"], errors="coerce", utc=True)
             h2h["Date"] = h2h["date"].dt.strftime("%Y-%m-%d")
@@ -411,7 +411,7 @@ with t4:
                 h2h[["Date", "season", "home_team", "Score", "away_team", "venue"]].rename(
                     columns={"season": "Season", "home_team": "Home", "away_team": "Away", "venue": "Venue"}
                 ),
-                use_container_width=True, hide_index=True,
+                width="stretch", hide_index=True,
             )
     else:
         # Model-only prediction

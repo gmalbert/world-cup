@@ -101,7 +101,7 @@ CONFEDERATION = {
 col_run, col_info = st.columns([2, 3])
 
 with col_run:
-    run_button = st.button("▶ Run Simulation", type="primary", use_container_width=True)
+    run_button = st.button("▶ Run Simulation", type="primary", width="stretch")
     st.caption(f"Will run {n_sims:,} full tournament simulations using the Elo + Poisson model.")
 
 with col_info:
@@ -175,7 +175,7 @@ else:
             yaxis={"categoryorder": "total ascending"},
             margin=dict(l=10, r=60, t=40, b=10),
         )
-        st.plotly_chart(fig_win, use_container_width=True)
+        st.plotly_chart(fig_win, width="stretch")
 
     with tab_table:
         # Colour scale for numeric columns
@@ -197,7 +197,7 @@ else:
 
         numeric_c = [c for c in stage_cols if c in display.columns]
         styled = display.style.applymap(color_pct, subset=numeric_c)
-        st.dataframe(styled, use_container_width=True, hide_index=True)
+        st.dataframe(styled, width="stretch", hide_index=True)
 
         st.caption(
             "All values are percentages across simulations.  \n"
@@ -220,7 +220,7 @@ else:
             paper_bgcolor=_BG, plot_bgcolor=_BG,
             font_color=_FC, margin=dict(l=10, r=10, t=40, b=10),
         )
-        st.plotly_chart(fig_hm, use_container_width=True)
+        st.plotly_chart(fig_hm, width="stretch")
 
     # ── Top 5 highlights ──────────────────────────────────────────────────────
     st.divider()

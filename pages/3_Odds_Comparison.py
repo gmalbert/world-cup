@@ -126,7 +126,7 @@ if live_odds is not None and not live_odds.empty:
             implied = 1.0 / display[col].where(display[col] > 0, np.nan)
             edge    = model_probs.get(col, 0) - (1.0 / max_val if max_val > 0 else 0)
 
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(display, width="stretch", hide_index=True)
 
     # Value bets
     st.markdown('<p class="section-header">🎯 Value Bet Detector</p>', unsafe_allow_html=True)
@@ -197,7 +197,7 @@ else:
         return ["background-color:#1b5e20;color:white;font-weight:700;" if v else "" for v in is_max]
 
     styled = demo_df.style.apply(highlight_max, subset=style_cols)
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+    st.dataframe(styled, width="stretch", hide_index=True)
 
     # Value bet analysis against demo odds
     st.markdown('<p class="section-header">🎯 Value Bet Analysis</p>', unsafe_allow_html=True)
@@ -254,7 +254,7 @@ else:
         font_color=_FC, margin=dict(l=10, r=10, t=40, b=10),
         yaxis=dict(title="Overround %", ticksuffix="%"),
     )
-    st.plotly_chart(fig_over, use_container_width=True)
+    st.plotly_chart(fig_over, width="stretch")
 
 
 # ── Implied probability radar ─────────────────────────────────────────────────
@@ -289,6 +289,6 @@ fig_ip.update_layout(
     yaxis=dict(title="Implied Probability %", ticksuffix="%"),
     legend=dict(orientation="h", yanchor="bottom", y=1.02),
 )
-st.plotly_chart(fig_ip, use_container_width=True)
+st.plotly_chart(fig_ip, width="stretch")
 
 add_betting_oracle_footer()

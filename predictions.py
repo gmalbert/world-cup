@@ -268,7 +268,7 @@ def home_page():
         coverage = all_matches.groupby("season")["home_team"].count().reset_index()
         coverage.columns = ["Season", "Matches Loaded"]
         with st.expander("📥 Data Coverage", expanded=False):
-            st.dataframe(coverage, use_container_width=True, hide_index=True)
+            st.dataframe(coverage, width="stretch", hide_index=True)
             st.caption("Sources: openfootball (2010, 2014) · BALLDONTLIE FIFA API (2018, 2022, 2026)")
 
     # ── Upcoming match predictions ────────────────────────────────────────────
@@ -404,7 +404,7 @@ def home_page():
         margin=dict(l=10, r=10, t=40, b=10),
     )
     fig.update_traces(marker_line_width=0)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # ── Group standings preview ───────────────────────────────────────────────
     st.divider()
@@ -425,7 +425,7 @@ def home_page():
                     grp_df = grp_df[["Team", "P", "Pts"]]
                     with col:
                         st.caption(f"**Group {grp}**")
-                        st.dataframe(grp_df, hide_index=True, use_container_width=True, height=235)
+                        st.dataframe(grp_df, hide_index=True, width="stretch", height=235)
     else:
         st.info(
             "Group standings will appear here once the tournament begins (June 11, 2026).  \n"

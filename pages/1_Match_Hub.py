@@ -79,7 +79,7 @@ with tab_schedule:
             unique_dates = sorted(season_df["date_only"].dropna().unique())
 
             if not unique_dates:
-                st.dataframe(season_df, use_container_width=True)
+                st.dataframe(season_df, width="stretch")
             else:
                 selected_date = st.select_slider(
                     "Jump to date",
@@ -136,7 +136,7 @@ with tab_schedule:
             .reset_index()
         )
         summary.columns = ["Season", "Total Matches", "With Results", "Source"]
-        st.dataframe(summary, use_container_width=True, hide_index=True)
+        st.dataframe(summary, width="stretch", hide_index=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -181,7 +181,7 @@ with tab_standings:
 
                 with cols[ci]:
                     st.markdown(f"**Group {grp}**")
-                    st.dataframe(grp_display, hide_index=True, use_container_width=True, height=235)
+                    st.dataframe(grp_display, hide_index=True, width="stretch", height=235)
     else:
         # Pre-tournament: show expected groups from fallback
         st.info(
@@ -204,7 +204,7 @@ with tab_standings:
                 grp_df.insert(2, "Pts", 0)
                 with cols[ci]:
                     st.markdown(f"**Group {grp}**")
-                    st.dataframe(grp_df, hide_index=True, use_container_width=True, height=235)
+                    st.dataframe(grp_df, hide_index=True, width="stretch", height=235)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -236,7 +236,7 @@ with tab_bracket:
                 st.markdown(f"**{stage}**")
                 display = stage_df[["home_team", "home_goals", "away_goals", "away_team", "date", "venue"]].copy()
                 display.columns = ["Home", "HG", "AG", "Away", "Date", "Venue"]
-                st.dataframe(display, hide_index=True, use_container_width=True)
+                st.dataframe(display, hide_index=True, width="stretch")
     else:
         st.info(
             "The 2026 World Cup bracket will populate here once the group stage completes (est. ~July 1, 2026).\n\n"

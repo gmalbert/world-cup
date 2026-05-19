@@ -159,9 +159,9 @@ with t1:
         return fig
 
     gc1, gc2, gc3 = st.columns(3)
-    gc1.plotly_chart(make_gauge(hw, f"{home_team} Win", "#00c853"), use_container_width=True)
-    gc2.plotly_chart(make_gauge(dr, "Draw", "#ffd600"),             use_container_width=True)
-    gc3.plotly_chart(make_gauge(aw, f"{away_team} Win", "#2196f3"), use_container_width=True)
+    gc1.plotly_chart(make_gauge(hw, f"{home_team} Win", "#00c853"), width="stretch")
+    gc2.plotly_chart(make_gauge(dr, "Draw", "#ffd600"),             width="stretch")
+    gc3.plotly_chart(make_gauge(aw, f"{away_team} Win", "#2196f3"), width="stretch")
 
     # Stacked horizontal bar
     fig_bar = go.Figure()
@@ -188,7 +188,7 @@ with t1:
         xaxis=dict(range=[0, 100], showticklabels=False, showgrid=False),
         yaxis=dict(showticklabels=False),
     )
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.plotly_chart(fig_bar, width="stretch")
 
     # xG Comparison
     st.markdown('<p class="section-header">Expected Goals (Model xG)</p>', unsafe_allow_html=True)
@@ -220,7 +220,7 @@ with t1:
         odds_pivot = real_odds.pivot_table(
             index="bookmaker", columns="outcome", values="odd", aggfunc="first"
         ).reset_index()
-        st.dataframe(odds_pivot, use_container_width=True, hide_index=True)
+        st.dataframe(odds_pivot, width="stretch", hide_index=True)
     else:
         compare_df = pd.DataFrame({
             "Source": ["GoallineIQ Model", "Market (illustrative)"],
@@ -228,7 +228,7 @@ with t1:
             "Draw":             [f"{dr:.1f}%", f"{1/demo_odds_d*100:.1f}% ({demo_odds_d})"],
             f"{away_team} Win": [f"{aw:.1f}%", f"{1/demo_odds_a*100:.1f}% ({demo_odds_a})"],
         })
-        st.dataframe(compare_df, use_container_width=True, hide_index=True)
+        st.dataframe(compare_df, width="stretch", hide_index=True)
         st.caption("Live bookmaker odds visible on the Odds Comparison page when API data is available.")
 
 
@@ -275,7 +275,7 @@ with t2:
                               "away_goals", "away_team", "venue"]].copy()
         display["date"] = display["date"].dt.strftime("%Y-%m-%d")
         display.columns = ["Season", "Date", "Round", "Home", "HG", "AG", "Away", "Venue"]
-        st.dataframe(display, use_container_width=True, hide_index=True)
+        st.dataframe(display, width="stretch", hide_index=True)
 
 
 # ── Tab 3: Form Guide ─────────────────────────────────────────────────────────
@@ -322,7 +322,7 @@ with t3:
                     return "background-color:#b71c1c;color:white;"
             st.dataframe(
                 home_form.style.map(color_result, subset=["Result"]),
-                use_container_width=True, hide_index=True,
+                width="stretch", hide_index=True,
             )
             wins = (home_form["Result"] == "W").sum()
             draws = (home_form["Result"] == "D").sum()
@@ -338,7 +338,7 @@ with t3:
         if not away_form.empty:
             st.dataframe(
                 away_form.style.map(color_result, subset=["Result"]),
-                use_container_width=True, hide_index=True,
+                width="stretch", hide_index=True,
             )
             wins = (away_form["Result"] == "W").sum()
             draws = (away_form["Result"] == "D").sum()
@@ -379,7 +379,7 @@ with t4:
         showlegend=False,
         yaxis=dict(title="xG", range=[0, max(pred["home_xg"], pred["away_xg"]) * 1.4]),
     )
-    st.plotly_chart(xg_fig, use_container_width=True)
+    st.plotly_chart(xg_fig, width="stretch")
 
     # Top scorelines
     st.markdown('<p class="section-header">Most Likely Scorelines</p>', unsafe_allow_html=True)
@@ -405,8 +405,8 @@ with t4:
             font_color=_FC, coloraxis_showscale=False,
             margin=dict(l=10, r=10, t=40, b=10),
         )
-        st.plotly_chart(fig_sl, use_container_width=True)
-        st.dataframe(sl_df, use_container_width=True, hide_index=True)
+        st.plotly_chart(fig_sl, width="stretch")
+        st.dataframe(sl_df, width="stretch", hide_index=True)
 
     # BTTS / Over 2.5 derived from Poisson
     from scipy.stats import poisson as poisson_dist
