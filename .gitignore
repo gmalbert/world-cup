@@ -1,0 +1,23 @@
+*.code-workspace
+
+# Local environments and secrets
+venv/
+.venv/
+.env
+
+# Python cache/build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor/local machine files
+.vscode/
+.DS_Store
+
+# Logs
+*.log
