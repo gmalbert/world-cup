@@ -30,7 +30,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-from utils.api_client import (
+from goallineiq_utils.api_client import (
     get_all_wc_matches, get_historical_top_scorers,
     bdl_client, apf_client,
 )

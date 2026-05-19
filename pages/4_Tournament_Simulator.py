@@ -32,9 +32,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-from utils.api_client import get_all_wc_matches, bdl_client
-from utils.models import build_predictor, WC2026_GROUPS
-from utils.simulator import TournamentSimulator
+from goallineiq_utils.api_client import get_all_wc_matches, bdl_client
+from goallineiq_utils.models import build_predictor, WC2026_GROUPS
+from goallineiq_utils.simulator import TournamentSimulator
 
 # ── Load data & model ─────────────────────────────────────────────────────────
 all_matches = get_all_wc_matches()

@@ -21,7 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from utils.api_client import (  # noqa: E402
+from goallineiq_utils.api_client import (  # noqa: E402
     get_all_wc_matches,
     get_current_standings,
     get_historical_top_scorers,

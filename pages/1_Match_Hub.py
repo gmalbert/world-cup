@@ -32,11 +32,11 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-from utils.api_client import (
+from goallineiq_utils.api_client import (
     get_all_wc_matches, get_upcoming_matches, get_current_standings,
     bdl_client, apf_client,
 )
-from utils.models import WC2026_GROUPS
+from goallineiq_utils.models import WC2026_GROUPS
 
 st.title("🏟️ Match Hub")
 st.caption("Live scores · Group standings · Schedule · Knockout bracket")

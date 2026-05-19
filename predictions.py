@@ -190,11 +190,11 @@ st.markdown(
 # ══════════════════════════════════════════════════════════════════════════════
 # IMPORTS (after path setup)
 # ══════════════════════════════════════════════════════════════════════════════
-from utils.api_client import (
+from goallineiq_utils.api_client import (
     get_all_wc_matches, get_upcoming_matches, get_current_standings,
     bdl_client, apf_client, WC_NAMES,
 )
-from utils.models import build_predictor, WC2026_GROUPS, FALLBACK_ELO
+from goallineiq_utils.models import build_predictor, WC2026_GROUPS, FALLBACK_ELO
 from footer import add_betting_oracle_footer
 
 

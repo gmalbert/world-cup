@@ -31,9 +31,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-from utils.api_client import get_upcoming_matches, apf_client
-from utils.models import build_predictor, get_predictor, FALLBACK_ELO, WC2026_GROUPS
-from utils.api_client import get_all_wc_matches
+from goallineiq_utils.api_client import get_upcoming_matches, apf_client
+from goallineiq_utils.models import build_predictor, get_predictor, FALLBACK_ELO, WC2026_GROUPS
+from goallineiq_utils.api_client import get_all_wc_matches
 
 # ── Load ──────────────────────────────────────────────────────────────────────
 all_matches = get_all_wc_matches()
