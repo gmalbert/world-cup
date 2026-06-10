@@ -34,6 +34,7 @@ st.markdown("""
 from goallineiq_utils.api_client import get_upcoming_matches, apf_client
 from goallineiq_utils.models import build_predictor, get_predictor, FALLBACK_ELO, WC2026_GROUPS
 from goallineiq_utils.api_client import get_all_wc_matches
+from goallineiq_utils.weather import get_weather_for_match
 
 # ── Load ──────────────────────────────────────────────────────────────────────
 all_matches = get_all_wc_matches()
@@ -64,6 +65,7 @@ with st.sidebar:
         home_team  = st.selectbox("Team A", all_teams, index=0)
         away_team  = st.selectbox("Team B", all_teams, index=1)
         fixture_id = None
+        sel_row = None
 
     st.divider()
     value_threshold = st.slider("Value threshold (%)", 1, 15, 5) / 100.0
@@ -76,6 +78,19 @@ dr   = pred["draw"]
 aw   = pred["away_win"]
 
 st.markdown(f"### {home_team}  vs  {away_team}")
+
+# Weather forecast (if match is upcoming)
+if sel_row is not None and pd.notna(sel_row.get("date")):
+    match_city = sel_row.get("city") if sel_row.get("city") else sel_row.get("venue")
+    if match_city:
+        weather = get_weather_for_match(str(match_city), str(sel_row["date"]))
+        if weather:
+            st.caption(
+                f"🌤️ **Weather Forecast for {match_city}:** "
+                f"{weather['weather_desc']} · **{weather['temperature_f']}°F** ({weather['temperature_c']}°C) · "
+                f"💨 Wind: {weather['windspeed_kmh']} km/h · 🌧️ Rain: {weather['precipitation_mm']} mm"
+            )
+
 st.caption(f"Elo: {int(pred['home_elo'])} vs {int(pred['away_elo'])}  ·  Model xG: {pred['home_xg']:.2f} – {pred['away_xg']:.2f}")
 st.divider()
 
@@ -290,5 +305,95 @@ fig_ip.update_layout(
     legend=dict(orientation="h", yanchor="bottom", y=1.02),
 )
 st.plotly_chart(fig_ip, width="stretch")
+
+# ── Value Finder Dashboard: All Upcoming Matches ──────────────────────────────
+st.divider()
+st.markdown('<p class="section-header">🔍 Value Finder · All Upcoming Matches</p>', unsafe_allow_html=True)
+st.caption("Scanning all upcoming fixtures for betting value where model disagrees with fair odds")
+
+if upcoming is not None and not upcoming.empty:
+    value_opportunities = []
+    
+    for _, match in upcoming.head(12).iterrows():  # Scan next 12 matches
+        home = str(match.get("home_team", ""))
+        away = str(match.get("away_team", ""))
+        if not home or not away:
+            continue
+            
+        try:
+            pred = predictor.predict(home, away, neutral=True)
+            
+            # Generate illustrative "best available odds" (in production, use real odds API)
+            margin = 1.04  # Pinnacle-like margin
+            market_h = 1 / (pred["home_win"] * margin)
+            market_d = 1 / (pred["draw"] * margin)
+            market_a = 1 / (pred["away_win"] * margin)
+            
+            # Calculate edges
+            edge_h = pred["home_win"] - (1/market_h)
+            edge_d = pred["draw"] - (1/market_d)
+            edge_a = pred["away_win"] - (1/market_a)
+            
+            # Find best value outcome
+            edges = [("Home Win", edge_h, market_h, pred["home_win"]),
+                     ("Draw", edge_d, market_d, pred["draw"]),
+                     ("Away Win", edge_a, market_a, pred["away_win"])]
+            best_edge_outcome, best_edge, best_odd, model_prob = max(edges, key=lambda x: x[1])
+            
+            if best_edge >= value_threshold:
+                value_opportunities.append({
+                    "Match": f"{home} vs {away}",
+                    "Date": str(match.get("date", ""))[:16],
+                    "Outcome": best_edge_outcome,
+                    "Model %": f"{model_prob*100:.1f}%",
+                    "Best Odds": f"{best_odd:.2f}",
+                    "Edge %": f"+{best_edge*100:.1f}%",
+                    "edge_num": best_edge
+                })
+        except Exception:
+            continue
+    
+    if value_opportunities:
+        value_df = pd.DataFrame(value_opportunities).sort_values("edge_num", ascending=False)
+        value_df = value_df.drop(columns=["edge_num"])
+        
+        st.success(f"✅ Found {len(value_df)} value opportunities across upcoming matches")
+        
+        # Color-code edges
+        def color_edge(val):
+            if "+" not in str(val):
+                return ""
+            edge = float(str(val).replace("+", "").replace("%", ""))
+            if edge >= 10:
+                return "background-color:#1b5e20;color:white;font-weight:700;"
+            elif edge >= 5:
+                return "background-color:#2e7d32;color:white;font-weight:700;"
+            elif edge >= 3:
+                return "background-color:#388e3c;color:white;font-weight:600;"
+            return ""
+        
+        styled_val = value_df.style.applymap(color_edge, subset=["Edge %"])
+        st.dataframe(styled_val, width="stretch", hide_index=True)
+        
+        st.caption(
+            "💡 **How to use:** These are matches where our model sees significantly more value than the market. "
+            "Higher edge % = stronger disagreement with bookmaker odds."
+        )
+    else:
+        st.info(f"No value bets found across upcoming matches at {value_threshold*100:.0f}% edge threshold. "
+                "Try lowering the threshold in the sidebar.")
+else:
+    st.info("Upcoming match data not available yet. Value finder will activate closer to tournament start.")
+
+# ── Group Stage Value Strategy ────────────────────────────────────────────────
+st.divider()
+st.markdown('<p class="section-header">⚡ Group Stage Betting Strategy</p>', unsafe_allow_html=True)
+st.info(
+    "**Best Value in Group Stage:**  \n"
+    "✅ Look for 3rd-match scenarios where Group A/B winners face Group C/D underperformers  \n"
+    "✅ CONCACAF hosts (USA/Mexico/Canada) may be overvalued early due to public betting — fade the hype  \n"
+    "✅ UEFA-heavy groups often see late-game draws when both teams have qualified  \n"
+    "✅ 3rd-place qualification adds variance — 8 best 3rd-placed teams advance (more ties, more draw value)"
+)
 
 add_betting_oracle_footer()

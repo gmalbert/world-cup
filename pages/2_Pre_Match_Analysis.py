@@ -35,6 +35,7 @@ st.markdown(f"""
 
 from goallineiq_utils.api_client import get_all_wc_matches, get_upcoming_matches, apf_client
 from goallineiq_utils.models import build_predictor, FALLBACK_ELO, WC2026_GROUPS
+from goallineiq_utils.weather import get_weather_for_match
 
 # ── Load data & model ─────────────────────────────────────────────────────────
 all_matches = get_all_wc_matches()
@@ -113,6 +114,17 @@ with hc2:
 with hc3:
     st.markdown(f'<p class="team-title">{away_team}</p>', unsafe_allow_html=True)
     st.markdown(f'<span class="elo-tag">Elo {int(pred["away_elo"])}</span>', unsafe_allow_html=True)
+
+# Weather forecast (if match is upcoming)
+match_city = sel_row.get("city") if 'sel_row' in locals() and sel_row.get("city") else sel_row.get("venue") if 'sel_row' in locals() else None
+if 'sel_row' in locals() and pd.notna(sel_row.get("date")) and match_city:
+    weather = get_weather_for_match(str(match_city), str(sel_row["date"]))
+    if weather:
+        st.info(
+            f"🌤️ **Weather Forecast for {match_city}:**  \n"
+            f"{weather['weather_desc']} · **{weather['temperature_f']}°F** ({weather['temperature_c']}°C)  \n"
+            f"💨 Wind: {weather['windspeed_kmh']} km/h · 🌧️ Rain: {weather['precipitation_mm']} mm"
+        )
 
 st.divider()
 

@@ -195,6 +195,11 @@ from goallineiq_utils.api_client import (
     bdl_client, apf_client, WC_NAMES,
 )
 from goallineiq_utils.models import build_predictor, WC2026_GROUPS, FALLBACK_ELO
+from goallineiq_utils.timezone_utils import (
+    assign_realistic_match_times, format_datetime_local, format_match_time_friendly,
+    add_browser_timezone_js
+)
+from goallineiq_utils.weather import get_weather_for_match
 from footer import add_betting_oracle_footer
 
 
@@ -259,6 +264,101 @@ def home_page():
     m5.metric("Stadiums", "16 across 3 countries")
     st.divider()
 
+    # ── Enhanced Tournament Countdown Banner ──────────────────────────────────
+    if not live and days_to > 0:
+        progress = max(0, min(100, (1 - days_to / 365) * 100))
+        st.markdown(
+            f"""
+            <div style="background:linear-gradient(135deg, #00c853 0%, #1565c0 100%);
+                        border-radius:12px; padding:1.5rem; margin:1rem 0; text-align:center;">
+                <div style="font-size:3rem;font-weight:900;color:#fff;margin-bottom:0.5rem;">
+                    ⚽ {days_to} DAYS TO KICKOFF
+                </div>
+                <div style="font-size:1.1rem;color:#e3f2fd;margin-bottom:1rem;">
+                    June 11, 2026 · Mexico City · Mexico vs. TBD
+                </div>
+                <div style="background:rgba(255,255,255,0.2);border-radius:10px;height:8px;overflow:hidden;">
+                    <div style="width:{progress}%;background:#fff;height:100%;transition:width 0.3s;"></div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    elif live:
+        st.success("🟢 **TOURNAMENT IS LIVE!** — Real-time predictions updating with every match result")
+
+    # ── Host Nation Spotlight ─────────────────────────────────────────────────
+    if days_to > 0 or live:
+        st.markdown('<p class="section-header">🏟️ Host Nation Advantage</p>', unsafe_allow_html=True)
+        host_cols = st.columns(3)
+        for idx, (nation, flag, city) in enumerate([
+            ("USA", "🇺🇸", "11 cities"),
+            ("Mexico", "🇲🇽", "3 cities"),
+            ("Canada", "🇨🇦", "2 cities")
+        ]):
+            with host_cols[idx]:
+                try:
+                    host_pred = predictor.predict(nation, "Brazil", neutral=False)  # vs top team
+                    host_elo = int(host_pred['home_elo'])
+                    win_pct = host_pred['home_win'] * 100
+                    st.metric(
+                        f"{flag} {nation}",
+                        f"Elo {host_elo}",
+                        f"+{win_pct:.0f}% vs Brazil",
+                        help=f"Hosting {city} | Home advantage modeled"
+                    )
+                except Exception:
+                    st.metric(f"{flag} {nation}", "Host Nation", city)
+        st.divider()
+
+    # ── Group Draw with Elo Ratings ───────────────────────────────────────────
+    if days_to > 30 or live:  # Show if tournament is approaching or live
+        st.markdown('<p class="section-header">📋 2026 Group Draw · Strength Analysis</p>', unsafe_allow_html=True)
+        st.caption("Each group shows team Elo ratings and predicted advancement probabilities")
+        
+        # Calculate group strength and advancement probabilities
+        group_data = []
+        for group_name, teams in sorted(WC2026_GROUPS.items()):
+            group_elos = []
+            for team in teams:
+                try:
+                    # Get Elo from predictor
+                    dummy_pred = predictor.predict(team, team, neutral=True)
+                    elo = int(dummy_pred['home_elo'])
+                except Exception:
+                    elo = FALLBACK_ELO.get(team, 1500)
+                group_elos.append((team, elo))
+            
+            # Sort by Elo (strongest first)
+            group_elos.sort(key=lambda x: x[1], reverse=True)
+            avg_elo = sum(e for _, e in group_elos) / len(group_elos)
+            
+            group_data.append({
+                'group': group_name,
+                'teams': group_elos,
+                'avg_elo': avg_elo,
+                'strength': '🔥' * min(5, int((avg_elo - 1400) / 100))
+            })
+        
+        # Display groups in a grid (4 columns x 3 rows = 12 groups)
+        for row_start in range(0, 12, 4):
+            row_groups = group_data[row_start:row_start + 4]
+            group_cols = st.columns(4)
+            for col_idx, gdata in enumerate(row_groups):
+                with group_cols[col_idx]:
+                    with st.container(border=True):
+                        st.markdown(
+                            f"**Group {gdata['group']}** {gdata['strength']}<br>"
+                            f"<small style='color:#9e9e9e;'>Avg Elo: {int(gdata['avg_elo'])}</small>",
+                            unsafe_allow_html=True
+                        )
+                        for rank, (team, elo) in enumerate(gdata['teams'], 1):
+                            qual_emoji = "🟢" if rank <= 2 else "🟡" if rank == 3 else "⚪"
+                            st.caption(f"{qual_emoji} {team} · `{elo}`")
+        
+        st.caption("🟢 Top 2 qualify · 🟡 Best 3rd place teams (8 total) · ⚪ Eliminated")
+        st.divider()
+
     # ── Load data & train model ───────────────────────────────────────────────
     with st.spinner("Loading historical World Cup data (2010–2026)…"):
         all_matches = get_all_wc_matches()
@@ -273,7 +373,15 @@ def home_page():
 
     # ── Upcoming match predictions ────────────────────────────────────────────
     st.markdown('<p class="section-header">⚽ Upcoming Match Predictions</p>', unsafe_allow_html=True)
+    
+    # Add timezone detection JS
+    add_browser_timezone_js()
+    
     upcoming = get_upcoming_matches(n=16)
+    
+    # Assign realistic match times to fixtures
+    if upcoming is not None and not upcoming.empty:
+        upcoming = assign_realistic_match_times(upcoming)
 
     if upcoming is not None and not upcoming.empty:
         pred_rows = []
@@ -286,6 +394,7 @@ def home_page():
                     "home_team": home, "away_team": away,
                     "date": row.get("date"), "round": row.get("round", ""),
                     "venue": row.get("venue", ""),
+                    "city": row.get("city", ""),
                     "home_win": p["home_win"], "draw": p["draw"], "away_win": p["away_win"],
                     "home_xg": p["home_xg"], "away_xg": p["away_xg"],
                     "home_elo": p["home_elo"], "away_elo": p["away_elo"],
@@ -295,13 +404,10 @@ def home_page():
             for idx, pred in enumerate(pred_rows):
                 col = cols[idx % 2]
                 with col:
-                    date_str = ""
-                    if pd.notna(pred["date"]):
-                        try:
-                            dt = pd.to_datetime(pred["date"], utc=True)
-                            date_str = dt.strftime("%b %d, %Y %H:%M UTC")
-                        except Exception:
-                            date_str = str(pred["date"])[:16]
+                    # Format datetime for display
+                    date_dt = pd.to_datetime(pred["date"], utc=True, errors="coerce")
+                    date_str = format_match_time_friendly(date_dt) if pd.notna(date_dt) else "Date TBD"
+                    
                     hw = pred["home_win"] * 100
                     dr = pred["draw"] * 100
                     aw = pred["away_win"] * 100
@@ -321,7 +427,19 @@ def home_page():
                             </div>""",
                             unsafe_allow_html=True,
                         )
-                        st.caption(f"📅 {date_str}  |  xG: {pred['home_xg']:.2f} – {pred['away_xg']:.2f}")
+                        venue_str = f"{pred['venue']}" if pred['venue'] else "Venue TBD"
+                        caption_parts = [f"📅 {date_str}", f"📍 {venue_str}"]
+                        
+                        # Add weather forecast for upcoming matches
+                        match_city = pred.get('city') if pred.get('city') else pred.get('venue')
+                        if match_city and pd.notna(pred.get('date')):
+                            weather = get_weather_for_match(str(match_city), str(pred['date']))
+                            if weather:
+                                weather_emoji = "☔" if weather["precipitation_mm"] > 1 else "☀️"
+                                caption_parts.append(f"{weather_emoji} {weather['temperature_f']}°F")
+                        
+                        st.caption("  |  ".join(caption_parts))
+                        st.caption(f"Expected Goals: {pred['home_xg']:.2f} – {pred['away_xg']:.2f}")
     else:
         st.info("Live fixture data not yet available — showing model predictions for selected group matches.")
         sample_matches = [
@@ -356,36 +474,87 @@ def home_page():
 
     # ── Value bet alerts ──────────────────────────────────────────────────────
     st.divider()
-    st.markdown('<p class="section-header">💰 Value Bet Alerts</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">💰 Top Value Bets (Model Edge)</p>', unsafe_allow_html=True)
     st.caption(
-        "Matches where the model's probability differs from bookmaker implied probability by >5 pp. "
-        "Always verify current odds before placing any bet."
+        "Best betting opportunities where our model finds significant value vs market odds. "
+        "Edge shows model probability minus implied market probability."
     )
-    value_examples = [
-        {"match": "Spain vs Colombia",  "outcome": "Spain Win",   "model_prob": 0.62, "market_odds": 1.85},
-        {"match": "Brazil vs Ecuador",  "outcome": "Brazil Win",  "model_prob": 0.68, "market_odds": 1.72},
-        {"match": "England vs Serbia",  "outcome": "England Win", "model_prob": 0.59, "market_odds": 1.95},
-    ]
-    value_found = False
-    for ex in value_examples:
-        implied = 1.0 / ex["market_odds"]
-        edge    = ex["model_prob"] - implied
-        if abs(edge) >= 0.05:
-            value_found = True
-            badge_color = "#00c853" if edge > 0 else "#f44336"
+    
+    # Calculate value bets from upcoming matches
+    value_threshold = 0.05  # 5% edge minimum
+    value_opportunities = []
+    
+    if upcoming is not None and not upcoming.empty:
+        for _, match in upcoming.head(12).iterrows():
+            home = str(match.get("home_team", ""))
+            away = str(match.get("away_team", ""))
+            if not home or not away:
+                continue
+                
+            try:
+                pred = predictor.predict(home, away, neutral=True)
+                
+                # Generate market odds (1.04 margin for realistic estimates)
+                margin = 1.04
+                market_h = 1 / (pred["home_win"] * margin)
+                market_d = 1 / (pred["draw"] * margin)
+                market_a = 1 / (pred["away_win"] * margin)
+                
+                # Calculate edges
+                edge_h = pred["home_win"] - (1/market_h)
+                edge_d = pred["draw"] - (1/market_d)
+                edge_a = pred["away_win"] - (1/market_a)
+                
+                # Collect all outcomes with edges
+                opportunities = [
+                    (f"{home} vs {away}", f"{home} Win", edge_h, market_h, pred["home_win"]),
+                    (f"{home} vs {away}", "Draw", edge_d, market_d, pred["draw"]),
+                    (f"{home} vs {away}", f"{away} Win", edge_a, market_a, pred["away_win"]),
+                ]
+                
+                for match_label, outcome, edge, odds, model_prob in opportunities:
+                    if edge >= value_threshold:
+                        value_opportunities.append({
+                            "match": match_label,
+                            "outcome": outcome,
+                            "model_prob": model_prob,
+                            "market_odds": odds,
+                            "edge": edge
+                        })
+            except Exception:
+                continue
+    
+    # Sort by edge and show top 5
+    value_opportunities.sort(key=lambda x: x["edge"], reverse=True)
+    top_bets = value_opportunities[:5]
+    
+    if top_bets:
+        st.success(f"✅ Found {len(top_bets)} strong value bets (edge ≥ {value_threshold*100:.0f}%)")
+        
+        for i, bet in enumerate(top_bets, 1):
+            implied = 1.0 / bet["market_odds"]
+            edge = bet["edge"]
+            badge_color = "#00c853"
+            
             with st.container(border=True):
                 vc1, vc2, vc3, vc4 = st.columns([3, 2, 2, 3])
-                vc1.markdown(f"**{ex['match']}**")
-                vc2.markdown(f"`{ex['outcome']}`")
-                vc3.metric("Model Prob", f"{ex['model_prob']*100:.1f}%",
-                           delta=f"{edge*100:+.1f}% vs market")
+                vc1.markdown(f"**#{i}  {bet['match']}**")
+                vc2.markdown(f"`{bet['outcome']}`")
+                vc3.metric(
+                    "Model Prob", 
+                    f"{bet['model_prob']*100:.1f}%",
+                    delta=f"{edge*100:+.1f}% edge",
+                    delta_color="normal"
+                )
                 vc4.markdown(
-                    f"Odds: **{ex['market_odds']}** → Implied: {implied*100:.1f}%  \n"
-                    f"<span style='color:{badge_color};font-weight:700;'>Edge: {edge*100:+.1f}%</span>",
+                    f"Best Odds: **{bet['market_odds']:.2f}** → Implied: {implied*100:.1f}%  \n"
+                    f"<span style='color:{badge_color};font-weight:700;'>🎯 Edge: {edge*100:+.1f}%</span>",
                     unsafe_allow_html=True,
                 )
-    if not value_found:
-        st.info("No strong value bets in current sample. See Odds Comparison for live analysis.")
+    else:
+        st.info("No strong value bets found in upcoming matches. Check back closer to match day for live odds analysis.")
+    
+    st.caption("⚠️ Odds are estimates based on model probabilities. Always verify current odds before betting.")
 
     # ── Tournament favorites (Elo chart) ─────────────────────────────────────
     st.divider()
@@ -464,6 +633,8 @@ pg = st.navigation(
             st.Page("pages/4_Tournament_Simulator.py", title="Tournament Simulator", icon="🎲"),
             st.Page("pages/5_Statistics.py",           title="Statistics",           icon="📊"),
             st.Page("pages/6_Team_Deep_Dive.py",       title="Team Deep Dive",       icon="🌍"),
+            st.Page("pages/7_Team_Profiles.py",        title="Team Profiles",        icon="🏆"),
+            st.Page("pages/8_Model_Performance.py",    title="Model Performance",    icon="📈"),
         ],
     }
 )

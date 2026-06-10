@@ -34,10 +34,17 @@ from goallineiq_utils.api_client import (
     get_all_wc_matches, get_historical_top_scorers,
     bdl_client, apf_client,
 )
+from goallineiq_utils.models import build_predictor
 
 # ── Load ──────────────────────────────────────────────────────────────────────
 all_matches     = get_all_wc_matches()
 top_scorers_raw = get_historical_top_scorers()
+
+# Build predictor for xG calculations
+try:
+    predictor = build_predictor(all_matches)
+except Exception:
+    predictor = None
 
 st.title("📊 Statistics Dashboard")
 st.caption("Tournament stats, historical comparisons, xG analysis — 2010 to 2026")
@@ -197,18 +204,18 @@ with tab_team:
             if not sm.empty:
                 home_agg = sm.groupby("home_team").agg(
                     GF=("home_goals", "sum"), GA=("away_goals", "sum"), M=("home_team", "count")
-                ).reset_index().rename(columns={"home_team": "team"})
+                ).reset_index().rename(columns={"home_team": "Team"})
                 away_agg = sm.groupby("away_team").agg(
                     GF=("away_goals", "sum"), GA=("home_goals", "sum"), M=("away_team", "count")
-                ).reset_index().rename(columns={"away_team": "team"})
-                combined = pd.concat([home_agg, away_agg]).groupby("team").sum().reset_index()
+                ).reset_index().rename(columns={"away_team": "Team"})
+                combined = pd.concat([home_agg, away_agg]).groupby("Team").sum().reset_index()
                 combined["GD"] = combined["GF"] - combined["GA"]
                 combined = combined.sort_values("GF", ascending=False)
                 st.dataframe(combined, width="stretch", hide_index=True)
 
                 fig_td = px.bar(
                     combined.head(16),
-                    x="team", y=["GF", "GA"],
+                    x="Team", y=["GF", "GA"],
                     barmode="group",
                     color_discrete_map={"GF": "#00c853", "GA": "#f44336"},
                     title=f"Goals For vs Against — {season_t}",
@@ -231,86 +238,145 @@ with tab_team:
 with tab_xg:
     st.markdown('<p class="section-header">Expected Goals (xG) Analysis</p>', unsafe_allow_html=True)
     st.caption(
-        "xG data available via BALLDONTLIE for 2022 and 2026 World Cups. "
-        "Teams above the diagonal are 'underperforming' their xG; teams below are overperforming."
+        "xG values are MODEL-GENERATED using our Dixon-Coles Poisson model based on Elo ratings. "
+        "Teams above the diagonal are 'overperforming' their expected goals; teams below are underperforming."
     )
 
-    for season_xg in [2026, 2022]:
-        team_stats_xg = bdl_client.get_team_stats(season_xg)
-        if team_stats_xg is not None and not team_stats_xg.empty \
-                and "xg_for" in team_stats_xg.columns \
-                and team_stats_xg["xg_for"].notna().any():
+    # Generate model-based xG for completed matches
+    if all_matches is not None and not all_matches.empty:
+        # Get completed matches for 2022 and 2026 with actual scores
+        completed_matches = all_matches[
+            (all_matches["season"].isin([2022, 2026])) &
+            (all_matches["home_goals"].notna()) &
+            (all_matches["away_goals"].notna()) &
+            (all_matches["status"].str.contains("completed|FT", case=False, na=False))
+        ].copy()
 
-            xg_df = team_stats_xg.dropna(subset=["xg_for", "goals_for"]).copy()
-            xg_df["xg_for"] = pd.to_numeric(xg_df["xg_for"], errors="coerce")
-
-            if not xg_df.empty:
+        if not completed_matches.empty and predictor is not None:
+            st.info(
+                f"📊 Analyzing {len(completed_matches)} completed matches from 2022 and 2026 tournaments. "
+                "Model xG calculated retroactively using current Elo ratings."
+            )
+            
+            # Calculate model xG for each match
+            xg_results = []
+            for _, match in completed_matches.iterrows():
+                home_team = match["home_team"]
+                away_team = match["away_team"]
+                
+                try:
+                    pred = predictor.predict(home_team, away_team, neutral=True)
+                    xg_results.append({
+                        "home_team": home_team,
+                        "away_team": away_team,
+                        "home_goals": match["home_goals"],
+                        "away_goals": match["away_goals"],
+                        "home_xg": pred["home_xg"],
+                        "away_xg": pred["away_xg"],
+                        "season": match["season"]
+                    })
+                except Exception:
+                    continue  # Skip if team not in model
+            
+            if xg_results:
+                xg_df = pd.DataFrame(xg_results)
+                
+                # Aggregate by team
+                home_agg = xg_df.groupby("home_team").agg({
+                    "home_xg": "sum",
+                    "home_goals": "sum"
+                }).rename(columns={"home_team": "team", "home_xg": "xg", "home_goals": "goals"})
+                
+                away_agg = xg_df.groupby("away_team").agg({
+                    "away_xg": "sum",
+                    "away_goals": "sum"
+                }).rename(columns={"away_team": "team", "away_xg": "xg", "away_goals": "goals"})
+                
+                # Combine home and away stats
+                home_agg = home_agg.reset_index().rename(columns={"home_team": "team"})
+                away_agg = away_agg.reset_index().rename(columns={"away_team": "team"})
+                combined_xg = pd.concat([home_agg, away_agg]).groupby("team").sum().reset_index()
+                
+                # Calculate xG difference
+                combined_xg["xg_diff"] = combined_xg["goals"] - combined_xg["xg"]
+                combined_xg = combined_xg.sort_values("xg_diff", ascending=False)
+                
+                # Plot
                 fig_xg = px.scatter(
-                    xg_df,
-                    x="xg_for", y="goals_for",
-                    hover_name="team",
-                    color="goals_for",
-                    size=xg_df["xg_for"].abs(),
-                    color_continuous_scale=["#1a237e", "#00c853"],
-                    labels={"xg_for": "Expected Goals (xG)", "goals_for": "Actual Goals"},
-                    title=f"xG vs Actual Goals — {season_xg}",
-                    height=420,
-                )
-                # Diagonal reference line
-                max_val = max(xg_df["xg_for"].max(), xg_df["goals_for"].max()) + 1
-                fig_xg.add_trace(go.Scatter(
-                    x=[0, max_val], y=[0, max_val],
-                    mode="lines",
-                    name="xG = Goals (fair)",
-                    line=dict(color="#9e9e9e", dash="dash", width=1),
-                ))
-                fig_xg.update_layout(
-                    paper_bgcolor=_BG, plot_bgcolor=_BG,
-                    font_color=_FC, coloraxis_showscale=False,
-                    margin=dict(l=10, r=10, t=40, b=10),
-                )
-                st.plotly_chart(fig_xg, width="stretch")
-                break
-    else:
-        # Use historical match data with model xg columns
-        if all_matches is not None and not all_matches.empty:
-            xg_data = all_matches[
-                all_matches["home_xg"].notna() & all_matches["season"].isin([2022, 2026])
-            ].copy()
-            if not xg_data.empty:
-                home_xg = xg_data.groupby("home_team").agg(
-                    xg=("home_xg", "sum"), goals=("home_goals", "sum")
-                ).reset_index().rename(columns={"home_team": "team"})
-                away_xg = xg_data.groupby("away_team").agg(
-                    xg=("away_xg", "sum"), goals=("away_goals", "sum")
-                ).reset_index().rename(columns={"away_team": "team"})
-                combined_xg = pd.concat([home_xg, away_xg]).groupby("team").sum().reset_index()
-
-                fig_xgm = px.scatter(
                     combined_xg,
-                    x="xg", y="goals",
+                    x="xg",
+                    y="goals",
                     hover_name="team",
-                    color="goals",
-                    color_continuous_scale=["#1a237e", "#00c853"],
-                    labels={"xg": "Expected Goals (xG)", "goals": "Actual Goals"},
-                    title="xG vs Actual Goals (from API data)",
-                    height=420,
+                    hover_data={
+                        "xg": ":.2f",
+                        "goals": ":.0f",
+                        "xg_diff": ":.2f"
+                    },
+                    color="xg_diff",
+                    color_continuous_scale="RdYlGn",
+                    color_continuous_midpoint=0,
+                    labels={
+                        "xg": "Model Expected Goals (xG)",
+                        "goals": "Actual Goals Scored",
+                        "xg_diff": "Goal Diff vs xG"
+                    },
+                    title="Model xG vs Actual Goals — 2022 & 2026 World Cups",
+                    height=500,
                 )
-                max_val = max(combined_xg["xg"].max(), combined_xg["goals"].max()) + 1
-                fig_xgm.add_trace(go.Scatter(
-                    x=[0, max_val], y=[0, max_val], mode="lines",
-                    name="Fair value", line=dict(color="#9e9e9e", dash="dash"),
+                
+                # Add diagonal reference line
+                max_val = max(combined_xg["xg"].max(), combined_xg["goals"].max()) + 2
+                fig_xg.add_trace(go.Scatter(
+                    x=[0, max_val],
+                    y=[0, max_val],
+                    mode="lines",
+                    name="xG = Goals (expected)",
+                    line=dict(color="#9e9e9e", dash="dash", width=2),
+                    showlegend=True
                 ))
-                fig_xgm.update_layout(
-                    paper_bgcolor=_BG, plot_bgcolor=_BG,
-                    font_color=_FC, coloraxis_showscale=False,
+                
+                fig_xg.update_layout(
+                    paper_bgcolor=_BG,
+                    plot_bgcolor=_BG,
+                    font_color=_FC,
                     margin=dict(l=10, r=10, t=40, b=10),
+                    coloraxis_colorbar=dict(
+                        title="Goal Diff",
+                        tickmode="linear",
+                        tick0=-5,
+                        dtick=2.5
+                    )
                 )
-                st.plotly_chart(fig_xgm, width="stretch")
+                
+                st.plotly_chart(fig_xg, width="stretch")
+                
+                # Top performers table
+                col_over, col_under = st.columns(2)
+                
+                with col_over:
+                    st.markdown("**🔥 Top Overperformers** (Goals > xG)")
+                    top_over = combined_xg.nlargest(5, "xg_diff")[["team", "goals", "xg", "xg_diff"]].copy()
+                    top_over.columns = ["Team", "Goals", "xG", "xG Diff"]
+                    top_over["xG"] = top_over["xG"].round(2)
+                    top_over["xG Diff"] = top_over["xG Diff"].apply(lambda x: f"+{x:.2f}")
+                    st.dataframe(top_over, width="stretch", hide_index=True)
+                
+                with col_under:
+                    st.markdown("**❄️ Top Underperformers** (Goals < xG)")
+                    top_under = combined_xg.nsmallest(5, "xg_diff")[["team", "goals", "xg", "xg_diff"]].copy()
+                    top_under.columns = ["Team", "Goals", "xG", "xG Diff"]
+                    top_under["xG"] = top_under["xG"].round(2)
+                    top_under["xG Diff"] = top_under["xG Diff"].round(2)
+                    st.dataframe(top_under, width="stretch", hide_index=True)
             else:
-                st.info("xG data is available via BALLDONTLIE API for 2022 and 2026 seasons. Check API connectivity.")
+                st.warning("Unable to calculate model xG — teams not found in prediction model.")
         else:
-            st.info("xG data will appear here once connected to the BALLDONTLIE API.")
+            st.info(
+                "📊 xG analysis will populate once matches are completed. "
+                "Our Dixon-Coles model will retroactively calculate expected goals for all finished games."
+            )
+    else:
+        st.warning("No match data available. Check data connectivity.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -1,10 +1,14 @@
 ﻿"""
 Tournament Simulator — Monte Carlo simulation of the 2026 FIFA World Cup.
-10 000 iterations per run. Shows probability of each team advancing through
-every stage: Group Stage → R32 → R16 → QF → SF → Final → Winner.
+Shows probability of each team advancing through every stage based on
+nightly pre-computed simulations (25,000+ iterations).
+Stage progression: Group Stage → R32 → R16 → QF → SF → Final → Winner.
 """
 import os
 import sys
+import json
+from pathlib import Path
+from datetime import datetime, timezone
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -32,29 +36,72 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-from goallineiq_utils.api_client import get_all_wc_matches, bdl_client
-from goallineiq_utils.models import build_predictor, WC2026_GROUPS
-from goallineiq_utils.simulator import TournamentSimulator
+from goallineiq_utils.models import WC2026_GROUPS
 
-# ── Load data & model ─────────────────────────────────────────────────────────
-all_matches = get_all_wc_matches()
-predictor   = build_predictor(all_matches)
+# ── Load pre-computed simulation results ──────────────────────────────────────
+SIMULATION_FILE = Path(__file__).parent.parent / "data_files" / "tournament_simulation.json"
+
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def load_simulation_results():
+    """Load pre-computed Monte Carlo simulation results."""
+    if not SIMULATION_FILE.exists():
+        return None, None
+    
+    try:
+        with open(SIMULATION_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        results_df = pd.DataFrame(data["results"])
+        metadata = data["metadata"]
+        return results_df, metadata
+    except Exception as e:
+        st.error(f"Error loading simulation results: {e}")
+        return None, None
+
+simulation_results, simulation_metadata = load_simulation_results()
 
 st.title("🎲 Tournament Simulator")
-st.caption("Monte Carlo simulation — run 10,000 scenarios of the 2026 FIFA World Cup")
+st.caption("Monte Carlo simulation — 25,000+ nightly scenarios of the 2026 FIFA World Cup")
 st.divider()
+
+# ── Show simulation metadata ──────────────────────────────────────────────────
+if simulation_metadata:
+    generated_at = datetime.fromisoformat(simulation_metadata["generated_at"])
+    time_ago = datetime.now(timezone.utc) - generated_at
+    hours_ago = int(time_ago.total_seconds() / 3600)
+    
+    col_info1, col_info2, col_info3 = st.columns(3)
+    with col_info1:
+        st.metric(
+            "Simulations Run",
+            f"{simulation_metadata['n_simulations']:,}",
+            help="Number of full tournament scenarios simulated"
+        )
+    with col_info2:
+        st.metric(
+            "Last Updated",
+            f"{hours_ago}h ago" if hours_ago > 0 else "< 1h ago",
+            help=f"Updated at {generated_at.strftime('%Y-%m-%d %H:%M UTC')}"
+        )
+    with col_info3:
+        st.metric(
+            "Teams Analyzed",
+            simulation_metadata['num_teams'],
+            help="All 48 teams in the 2026 World Cup"
+        )
+    
+    st.info(
+        "**How it works:**  \n"
+        "Results are pre-computed nightly using our Elo + Poisson model. Each simulation:  \n"
+        "1. Simulates all 12 groups (round-robin, Poisson-distributed goals)  \n"
+        "2. Selects top 2 per group + 8 best 3rd-placed teams (32 qualifiers)  \n"
+        "3. Simulates knockout rounds — no draws; ties go to simulated penalties  \n"
+        "4. Updates after every match with latest team data"
+    )
+    st.divider()
 
 # ── Sidebar controls ──────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### Simulation Settings")
-    n_sims = st.select_slider(
-        "Simulations",
-        options=[1_000, 2_000, 5_000, 10_000, 25_000],
-        value=10_000,
-    )
-    st.caption(f"Higher = more accurate but slower.  \n{n_sims:,} iterations selected.")
-    st.divider()
-
     st.markdown("### Filter Results")
     all_teams_flat = sorted(set(t for teams in WC2026_GROUPS.values() for t in teams))
     confederation_filter = st.multiselect(
@@ -64,6 +111,12 @@ with st.sidebar:
         placeholder="All confederations",
     )
     top_n = st.slider("Show top N teams", 8, 48, 20)
+    
+    st.divider()
+    st.caption(
+        "💡 **Note:** Simulations run automatically every night after matches. "
+        "This prevents server overload and ensures consistent, up-to-date predictions."
+    )
 
 # ── Confederation mapping ─────────────────────────────────────────────────────
 CONFEDERATION = {
@@ -97,42 +150,16 @@ CONFEDERATION = {
     "New Zealand": "OFC",
 }
 
-# ── Simulation ────────────────────────────────────────────────────────────────
-col_run, col_info = st.columns([2, 3])
-
-with col_run:
-    run_button = st.button("▶ Run Simulation", type="primary", width="stretch")
-    st.caption(f"Will run {n_sims:,} full tournament simulations using the Elo + Poisson model.")
-
-with col_info:
-    st.info(
-        "**How it works:**  \n"
-        "1. Simulate all 12 groups (round-robin, Poisson-distributed goals)  \n"
-        "2. Select top 2 per group + 8 best 3rd-placed teams (32 qualifiers)  \n"
-        "3. Simulate knockout rounds — no draws; ties go to simulated penalties  \n"
-        "4. Repeat N times and count how often each team reaches each stage"
-    )
-
-# ── Cache simulation results in session state ─────────────────────────────────
-if "sim_results" not in st.session_state:
-    st.session_state.sim_results = None
-    st.session_state.sim_n = 0
-
-if run_button:
-    with st.spinner(f"Running {n_sims:,} tournament simulations…"):
-        sim = TournamentSimulator(predictor)
-        results = sim.run(groups=WC2026_GROUPS, n=n_sims)
-        st.session_state.sim_results = results
-        st.session_state.sim_n = n_sims
-    st.success(f"✅ Simulation complete — {n_sims:,} scenarios simulated.")
-
-results = st.session_state.sim_results
-
 # ── Show results ──────────────────────────────────────────────────────────────
-if results is None:
-    st.info("Press **▶ Run Simulation** to generate results.")
+if simulation_results is None:
+    st.warning(
+        "⚠️ **Simulation results not available**  \n"
+        "Pre-computed results will be generated during the tournament (June 11 - July 19, 2026). "
+        "The simulation runs automatically every night at 5 AM UTC."
+    )
 else:
-    results = results.copy()
+    results = simulation_results.copy()
+    n_sims = simulation_metadata.get("n_simulations", 25000) if simulation_metadata else 25000
 
     # Add confederation
     results["Confederation"] = results["team"].map(CONFEDERATION).fillna("Other")
@@ -143,9 +170,8 @@ else:
 
     results = results.head(top_n)
 
-    st.divider()
     st.markdown(
-        f'<p class="section-header">Results — {st.session_state.sim_n:,} Simulations</p>',
+        f'<p class="section-header">Results — {n_sims:,} Simulations</p>',
         unsafe_allow_html=True,
     )
 
@@ -161,7 +187,7 @@ else:
             color_continuous_scale=["#1a237e", "#00c853"],
             text="Winner %",
             labels={"team": "", "Winner %": "Win Probability (%)"},
-            title=f"Tournament Win Probability — Top 15 Teams ({st.session_state.sim_n:,} sims)",
+            title=f"Tournament Win Probability — Top 15 Teams ({n_sims:,} sims)",
             height=460,
         )
         fig_win.update_traces(
@@ -243,7 +269,7 @@ else:
         winner_col = "Winner %" if "Winner %" in top1.index else "Winner"
         share_text = (
             f"🏆 According to GoallineIQ's 2026 World Cup Monte Carlo model "
-            f"({st.session_state.sim_n:,} simulations):  \n"
+            f"({n_sims:,} simulations):  \n"
             f"→ **{top1['team']}** has the best chance at **{top1.get(winner_col,0):.1f}%** to win it all."
         )
         st.info(share_text)

@@ -37,6 +37,10 @@ from goallineiq_utils.api_client import (
     bdl_client, apf_client,
 )
 from goallineiq_utils.models import WC2026_GROUPS
+from goallineiq_utils.timezone_utils import (
+    assign_realistic_match_times, format_match_time_friendly
+)
+from goallineiq_utils.weather import add_weather_to_matches, get_weather_for_match
 
 st.title("🏟️ Match Hub")
 st.caption("Live scores · Group standings · Schedule · Knockout bracket")
@@ -68,6 +72,11 @@ with tab_schedule:
 
     if all_matches is not None and not all_matches.empty:
         season_df = all_matches[all_matches["season"] == season_filter].copy()
+        
+        # Assign realistic match times for 2026 fixtures
+        if season_filter == 2026:
+            season_df = assign_realistic_match_times(season_df)
+        
         season_df["date"] = pd.to_datetime(season_df["date"], errors="coerce", utc=True)
         season_df = season_df.sort_values("date")
 
@@ -96,13 +105,31 @@ with tab_schedule:
                     ag = row.get("away_goals")
                     status = str(row.get("status", "")).upper()
                     venue = str(row.get("venue", ""))
+                    city = str(row.get("city", ""))
                     rnd = str(row.get("round", row.get("group", "")))
-
+                    
+                    # Format match time
+                    match_time = ""
+                    if pd.notna(row.get("date")):
+                        match_dt = pd.to_datetime(row["date"], utc=True)
+                        match_time = format_match_time_friendly(match_dt)
+                    
+                    # Determine match status
                     completed = (
                         pd.notna(hg) and pd.notna(ag)
                         or "FT" in status or "COMPLETED" in status
                     )
                     live = "LIVE" in status or "1H" in status or "2H" in status
+                    
+                    # Get weather forecast for upcoming matches
+                    weather_info = ""
+                    match_city = city if city else venue
+                    if not completed and not live and match_city and pd.notna(row.get("date")):
+                        weather = get_weather_for_match(match_city, str(row["date"]))
+                        if weather:
+                            temp_emoji = "🔥" if weather["temperature_c"] > 30 else "🥶" if weather["temperature_c"] < 10 else "🌡️"
+                            weather_emoji = "☔" if weather["precipitation_mm"] > 1 else "☀️"
+                            weather_info = f"{weather_emoji} {weather['temperature_f']}°F"
 
                     with st.container(border=True):
                         mc1, mc2, mc3, mc4 = st.columns([3, 2, 3, 2])
@@ -115,9 +142,12 @@ with tab_schedule:
                         elif live:
                             mc2.markdown("<div style='text-align:center;color:#f44336;font-weight:700;'>LIVE</div>", unsafe_allow_html=True)
                         else:
-                            mc2.markdown("<div style='text-align:center;color:#9e9e9e;'>vs</div>", unsafe_allow_html=True)
+                            mc2.markdown(f"<div style='text-align:center;color:#00c853;font-size:0.85rem;'>{match_time}</div>", unsafe_allow_html=True)
                         mc3.markdown(f"**{away}**")
-                        mc4.caption(f"{rnd}  \n📍 {venue[:30]}")
+                        venue_weather = f"{rnd}  \n📍 {venue[:30]}"
+                        if weather_info:
+                            venue_weather += f"  \n{weather_info}"
+                        mc4.caption(venue_weather)
     else:
         st.warning("Could not load match data. Check API connectivity.")
 

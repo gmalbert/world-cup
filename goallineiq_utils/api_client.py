@@ -84,7 +84,7 @@ def _parse_openfootball(data: Dict, year: int) -> pd.DataFrame:
             "home_goals_ht": ht[0] if ht and len(ht) > 0 and ht[0] is not None else None,
             "away_goals_ht": ht[1] if ht and len(ht) > 1 and ht[1] is not None else None,
             "venue":         ground,
-            "city":          "",
+            "city":          ground,  # Use venue as city fallback for openfootball
             "status":        "completed" if (ft and len(ft) > 0 and ft[0] is not None) else "scheduled",
             "home_xg":       None,
             "away_xg":       None,
