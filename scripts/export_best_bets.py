@@ -60,17 +60,39 @@ def _decimal_to_american(dec: float) -> int | None:
         return None
 
 
-def _latest_snapshot() -> dict | None:
-    """Return the most recent JSON odds snapshot, or None if none exist."""
+def _latest_odds_snapshot() -> list | None:
+    """Load today's odds.json from the nightly snapshot directory."""
     snap_dir = DATA / "nightly_snapshots"
     if not snap_dir.exists():
         return None
-    files = sorted(snap_dir.glob("*.json"), reverse=True)
-    for f in files:
-        try:
-            return json.loads(f.read_text(encoding="utf-8"))
-        except Exception:
-            continue
+    # Walk dated subdirs newest-first
+    for dated_dir in sorted(snap_dir.iterdir(), reverse=True):
+        path = dated_dir / "odds.json"
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(data, list):
+                    return data
+            except Exception:
+                continue
+    return None
+
+
+def _name_key(name: str) -> str:
+    import re
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def _find_event(raw_odds: list, home: str, away: str) -> dict | None:
+    """Fuzzy-match a (home, away) pair against the raw Odds API event list."""
+    hk, ak = _name_key(home), _name_key(away)
+    for ev in raw_odds:
+        ek_h = _name_key(ev.get("home_team", ""))
+        ek_a = _name_key(ev.get("away_team", ""))
+        if (hk in ek_h or ek_h in hk) and (ak in ek_a or ek_a in ak):
+            return ev
+        if (ak in ek_h or ek_h in ak) and (hk in ek_a or ek_a in hk):
+            return ev
     return None
 
 
@@ -99,10 +121,8 @@ def export() -> None:
         _write([], "no upcoming fixtures")
         return
 
-    # ── Load latest odds snapshot (optional) ─────────────────────────────
-    snap = _latest_snapshot()
-    # snap is expected to be a dict keyed by match_id or fixture string
-    odds_lookup: dict[str, dict] = snap if isinstance(snap, dict) else {}
+    # ── Load real odds from The Odds API snapshot ─────────────────────────
+    raw_odds = _latest_odds_snapshot() or []
 
     for _, row in upcoming.iterrows():
         home = str(row.get("home_team", "")).strip()
@@ -125,24 +145,68 @@ def export() -> None:
         hw = _safe_float(pred.get("home_win", 0))
         dr = _safe_float(pred.get("draw", 0))
         aw = _safe_float(pred.get("away_win", 0))
+        ou = pred.get("ou", {})
+        ou25 = ou.get(2.5, {})
 
-        match_odds = odds_lookup.get(game_label, {})
+        # Find matching event in Odds API snapshot
+        event = _find_event(raw_odds, home, away)
+        flipped = False
+        if event and _name_key(event.get("home_team","")) != _name_key(home):
+            flipped = True
 
-        # Build candidate bets: home / draw / away
-        candidates = [
-            ("moneyline", home, hw, match_odds.get("home_dec")),
-            ("draw", "Draw", dr, match_odds.get("draw_dec")),
-            ("moneyline", away, aw, match_odds.get("away_dec")),
-        ]
+        # Extract best odds from all bookmakers
+        best_h = best_d = best_a = 0.0
+        best_ou_over = best_ou_under = 0.0
+        if event:
+            for bm in event.get("bookmakers", []):
+                for mkt in bm.get("markets", []):
+                    mkt_key = mkt.get("key", "")
+                    if mkt_key == "h2h":
+                        for o in mkt.get("outcomes", []):
+                            o_key = _name_key(o.get("name", ""))
+                            price = float(o.get("price", 0))
+                            if "draw" in o_key:
+                                best_d = max(best_d, price)
+                            elif o_key in _name_key(event.get("home_team", "")):
+                                if flipped:
+                                    best_a = max(best_a, price)
+                                else:
+                                    best_h = max(best_h, price)
+                            else:
+                                if flipped:
+                                    best_h = max(best_h, price)
+                                else:
+                                    best_a = max(best_a, price)
+                    elif mkt_key == "totals":
+                        for o in mkt.get("outcomes", []):
+                            if abs(float(o.get("point", 0)) - 2.5) < 0.01:
+                                nm = o.get("name", "").lower()
+                                if "over" in nm:
+                                    best_ou_over = max(best_ou_over, float(o.get("price", 0)))
+                                elif "under" in nm:
+                                    best_ou_under = max(best_ou_under, float(o.get("price", 0)))
+
+        # Build candidate bets: 1X2 + O/U
+        candidates: list[tuple] = []
+        if best_h:
+            candidates.append(("moneyline", home, hw, best_h))
+        if best_d:
+            candidates.append(("draw", "Draw", dr, best_d))
+        if best_a:
+            candidates.append(("moneyline", away, aw, best_a))
+        if best_ou_over and ou25.get("over"):
+            candidates.append(("over_2.5", f"Over 2.5 ({home} vs {away})",
+                               ou25["over"], best_ou_over))
+        if best_ou_under and ou25.get("under"):
+            candidates.append(("under_2.5", f"Under 2.5 ({home} vs {away})",
+                               ou25["under"], best_ou_under))
 
         for bet_type, pick, model_prob, market_dec in candidates:
-            if market_dec:
-                market_implied = 1.0 / _safe_float(market_dec, 1.0)
-                edge = model_prob - market_implied
-                dk_odds = _decimal_to_american(_safe_float(market_dec))
-            else:
-                # No odds available — skip value calculation
+            if not market_dec or market_dec <= 0:
                 continue
+            market_implied = 1.0 / _safe_float(market_dec, 1.0)
+            edge = model_prob - market_implied
+            dk_odds = _decimal_to_american(_safe_float(market_dec))
 
             if edge < EV_THRESHOLD:
                 continue

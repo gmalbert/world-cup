@@ -34,7 +34,7 @@ st.markdown(f"""
 
 from goallineiq_utils.api_client import (
     get_all_wc_matches, get_upcoming_matches, get_current_standings,
-    bdl_client, apf_client,
+    bdl_client, apf_client, espn_client,
 )
 from goallineiq_utils.models import WC2026_GROUPS
 from goallineiq_utils.timezone_utils import (
@@ -46,8 +46,8 @@ st.title("🏟️ Match Hub")
 st.caption("Live scores · Group standings · Schedule · Knockout bracket")
 st.divider()
 
-tab_schedule, tab_standings, tab_bracket = st.tabs([
-    "🗓️ Schedule", "📊 Group Standings", "🏆 Knockout Bracket"
+tab_schedule, tab_standings, tab_bracket, tab_groups = st.tabs([
+    "🗓️ Schedule", "📊 Group Standings", "🏆 Knockout Bracket", "📋 Group Draw"
 ])
 
 
@@ -55,6 +55,26 @@ tab_schedule, tab_standings, tab_bracket = st.tabs([
 # TAB 1 — SCHEDULE
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_schedule:
+    # ── Live scoreboard (ESPN) ───────────────────────────────────────────────
+    live_df = espn_client.get_scoreboard()
+    live_active = live_df is not None and not live_df.empty and \
+                  live_df["completed"].dtype == bool and \
+                  (~live_df["completed"]).any() if live_df is not None and not live_df.empty else False
+
+    if live_df is not None and not live_df.empty:
+        live_now = live_df[~live_df["completed"].astype(bool)] if "completed" in live_df.columns else pd.DataFrame()
+        if not live_now.empty:
+            st.markdown('<p class="section-header" style="color:#f44336;">🔴 LIVE NOW</p>', unsafe_allow_html=True)
+            for _, lrow in live_now.iterrows():
+                hg = lrow.get("home_goals", "—")
+                ag = lrow.get("away_goals", "—")
+                score_str = f"{hg} – {ag}" if (hg not in (None, "", "None") and ag not in (None, "", "None")) else "v"
+                st.markdown(
+                    f"**{lrow.get('home_team','')}** `{score_str}` **{lrow.get('away_team','')}**"
+                    f"  ·  {lrow.get('status','')}"
+                )
+            st.divider()
+
     all_matches = get_all_wc_matches()
 
     season_filter = st.selectbox(
@@ -175,18 +195,45 @@ with tab_schedule:
 with tab_standings:
     standings = get_current_standings()
 
+    # Load simulation advancement probs for qualification indicator
+    from pathlib import Path
+    import json as _json
+    _sim_file = Path(__file__).parent.parent / "data_files" / "tournament_simulation.json"
+    _sim_adv: dict[str, float] = {}
+    try:
+        _sim_data = _json.loads(_sim_file.read_text(encoding="utf-8"))
+        for row in _sim_data.get("results", []):
+            _sim_adv[row["team"]] = row.get("Group Stage", 100.0)
+    except Exception:
+        pass
+
+    def _qual_badge(rank: int, pts: int, played: int, gd: int) -> str:
+        """Return a qualification status label given current rank and stats.
+        2026 format: top 2 per group qualify, 8 best 3rd-place teams also qualify.
+        3 group matches per team (max 9 pts).
+        """
+        remaining = max(0, 3 - played)
+        max_pts = pts + remaining * 3
+        if rank <= 2 and remaining == 0:
+            return "🟢 Qualified"
+        if rank <= 2 and pts >= 6:
+            return "🟢 Likely Qualified"
+        if rank == 3:
+            return "🟡 3rd Place"
+        if max_pts < 3 and played > 0:
+            return "🔴 Eliminated"
+        return "⏳ TBD"
+
     if standings is not None and not standings.empty and "group" in standings.columns:
         all_groups = sorted(standings["group"].unique())
         st.caption(f"**{len(all_groups)} groups · Last updated: {datetime.now(timezone.utc).strftime('%H:%M UTC')}**")
 
-        # Render in rows of 2 groups so each table stays readable at half-screen width
         for row_start in range(0, len(all_groups), 2):
             row_groups = all_groups[row_start:row_start + 2]
             cols = st.columns(len(row_groups))
             for ci, grp in enumerate(row_groups):
                 grp_df = standings[standings["group"] == grp].copy()
 
-                # Normalise column names
                 col_map = {}
                 for c in grp_df.columns:
                     cl = c.lower()
@@ -206,40 +253,182 @@ with tab_standings:
                         col_map[c] = "Pts"
                 grp_df = grp_df.rename(columns=col_map)
 
-                keep = [c for c in ["Team", "P", "Pts"] if c in grp_df.columns]
+                # Sort by Pts desc, then GD
+                if "Pts" in grp_df.columns:
+                    sort_cols = [c for c in ["Pts", "GD"] if c in grp_df.columns]
+                    grp_df = grp_df.sort_values(sort_cols, ascending=False).reset_index(drop=True)
+                    grp_df.insert(0, "#", range(1, len(grp_df) + 1))
+
+                # Add qualification status
+                status_list = []
+                for i, row_s in grp_df.iterrows():
+                    rank = i + 1 if "#" not in grp_df.columns else int(row_s.get("#", i + 1))
+                    pts   = int(row_s.get("Pts", 0))
+                    played = int(row_s.get("P", 0))
+                    gd    = int(row_s.get("GD", 0))
+                    status_list.append(_qual_badge(rank, pts, played, gd))
+                grp_df["Status"] = status_list
+
+                keep = [c for c in ["#", "Team", "P", "W", "D", "L", "GD", "Pts", "Status"]
+                        if c in grp_df.columns]
                 grp_display = grp_df[keep].head(4)
 
                 with cols[ci]:
-                    st.markdown(f"**Group {grp}**")
+                    _grp_label = str(grp).replace("Group ", "").replace("group ", "")
+                    st.markdown(f"**Group {_grp_label}**")
                     st.dataframe(grp_display, hide_index=True, width="stretch", height=235)
-    else:
-        # Pre-tournament: show expected groups from fallback
+        from goallineiq_utils.models import build_predictor, FALLBACK_ELO
+        from goallineiq_utils.api_client import get_all_wc_matches as _get_all
+        _all = _get_all()
+        _pred = build_predictor(_all)
+
         st.info(
-            "Live standings will appear here once the tournament begins (June 11, 2026).  \n"
-            "Showing the confirmed 2026 World Cup group draw:"
+            "Live standings appear once results are available.  "
+            "Showing pre-tournament Elo rankings per group with model advancement probability."
         )
-        grp_rows = []
+
+        grp_rows_all: list[dict] = []
         for grp_letter, teams in WC2026_GROUPS.items():
+            team_elos_g = []
             for t in teams:
-                grp_rows.append({"Group": grp_letter, "Team": t})
-        draw_df = pd.DataFrame(grp_rows)
+                try:
+                    ep = _pred.predict(t, t, neutral=True)
+                    elo = int(ep["home_elo"])
+                except Exception:
+                    elo = FALLBACK_ELO.get(t, 1500)
+                adv_pct = _sim_adv.get(t, None)
+                team_elos_g.append((t, elo, adv_pct))
+            team_elos_g.sort(key=lambda x: x[1], reverse=True)
+            for rank_i, (t, elo, adv_pct) in enumerate(team_elos_g, 1):
+                qual_tag = "🟢 Likely" if rank_i <= 2 else "🟡 3rd" if rank_i == 3 else "⚪"
+                grp_rows_all.append({
+                    "Group": grp_letter, "Team": t,
+                    "Elo": elo,
+                    "Adv %": f"{adv_pct:.0f}%" if adv_pct is not None else "—",
+                    "Expected": qual_tag,
+                })
+
+        draw_df = pd.DataFrame(grp_rows_all)
         all_groups = sorted(draw_df["Group"].unique())
 
         for row_start in range(0, len(all_groups), 2):
             row_groups = all_groups[row_start:row_start + 2]
             cols = st.columns(len(row_groups))
             for ci, grp in enumerate(row_groups):
-                grp_df = draw_df[draw_df["Group"] == grp][["Team"]].copy()
-                grp_df.insert(1, "P", 0)
-                grp_df.insert(2, "Pts", 0)
+                grp_df = draw_df[draw_df["Group"] == grp][
+                    ["Team", "Elo", "Adv %", "Expected"]
+                ].copy()
                 with cols[ci]:
-                    st.markdown(f"**Group {grp}**")
+                    _grp_label2 = str(grp).replace("Group ", "").replace("group ", "")
+                    st.markdown(f"**Group {_grp_label2}**")
                     st.dataframe(grp_df, hide_index=True, width="stretch", height=235)
 
+        st.caption("🟢 Likely top 2 · 🟡 Potential 3rd qualifier · ⚪ Unlikely  |  Adv % = simulation group-stage advancement")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# TAB 3 — KNOCKOUT BRACKET
-# ══════════════════════════════════════════════════════════════════════════════
+    # ── Group Stage Permutations Tool ─────────────────────────────────────────
+    st.divider()
+    with st.expander("🔀 Group Stage Permutations — What-If Tool", expanded=False):
+        st.caption(
+            "Pick results for remaining group matches and instantly see how the standings change. "
+            "Helps identify qualification scenarios on the final matchday."
+        )
+
+        perm_group = st.selectbox(
+            "Select group", sorted(WC2026_GROUPS.keys()), key="perm_group_sel"
+        )
+        perm_teams = WC2026_GROUPS[perm_group]
+
+        # Build all possible pairings for a group of 4 (round-robin = 6 matches)
+        from itertools import combinations as _comb
+        all_pairs = list(_comb(perm_teams, 2))
+
+        # Get actual results from match data so we can pre-fill played matches
+        _played_results: dict[tuple, tuple] = {}
+        try:
+            _all_wc = get_all_wc_matches()
+            if _all_wc is not None and not _all_wc.empty:
+                _wc26 = _all_wc[_all_wc["season"] == 2026].dropna(subset=["home_goals", "away_goals"])
+                for _, _mr in _wc26.iterrows():
+                    _ht, _at = str(_mr["home_team"]), str(_mr["away_team"])
+                    _hg, _ag = int(_mr["home_goals"]), int(_mr["away_goals"])
+                    if (_ht in perm_teams) and (_at in perm_teams):
+                        _played_results[(_ht, _at)] = (_hg, _ag)
+        except Exception:
+            pass
+
+        st.markdown("**Pick a result for each match:**")
+        perm_goals: dict[tuple, tuple] = {}
+        RESULT_OPTIONS = ["Home Win", "Draw", "Away Win"]
+
+        for pair in all_pairs:
+            home_t, away_t = pair
+            already_played = (home_t, away_t) in _played_results or (away_t, home_t) in _played_results
+            if already_played:
+                if (home_t, away_t) in _played_results:
+                    hg, ag = _played_results[(home_t, away_t)]
+                else:
+                    ag, hg = _played_results[(away_t, home_t)]
+                st.write(f"✅ **{home_t} {hg}–{ag} {away_t}** *(result locked)*")
+                perm_goals[(home_t, away_t)] = (hg, ag)
+            else:
+                res = st.radio(
+                    f"{home_t} vs {away_t}",
+                    RESULT_OPTIONS,
+                    horizontal=True,
+                    index=0,
+                    key=f"perm_{home_t}_{away_t}",
+                )
+                if res == "Home Win":
+                    perm_goals[(home_t, away_t)] = (1, 0)
+                elif res == "Draw":
+                    perm_goals[(home_t, away_t)] = (1, 1)
+                else:
+                    perm_goals[(home_t, away_t)] = (0, 1)
+
+        # Compute standings from selected results
+        pts_map: dict[str, int]  = {t: 0 for t in perm_teams}
+        gd_map:  dict[str, int]  = {t: 0 for t in perm_teams}
+        gf_map:  dict[str, int]  = {t: 0 for t in perm_teams}
+        for (ht, at), (hg, ag) in perm_goals.items():
+            gf_map[ht]  += hg; gf_map[at]  += ag
+            gd_map[ht]  += hg - ag; gd_map[at]  += ag - hg
+            if hg > ag:
+                pts_map[ht] += 3
+            elif ag > hg:
+                pts_map[at] += 3
+            else:
+                pts_map[ht] += 1; pts_map[at] += 1
+
+        perm_rows = sorted(perm_teams,
+                           key=lambda t: (pts_map[t], gd_map[t], gf_map[t]),
+                           reverse=True)
+        perm_df = pd.DataFrame([{
+            "Rank": i + 1,
+            "Team": t,
+            "Pts": pts_map[t],
+            "GD": gd_map[t],
+            "GF": gf_map[t],
+            "Status": ("🟢 Qualified" if i < 2 else "🟡 3rd Place" if i == 2 else "🔴 Eliminated"),
+        } for i, t in enumerate(perm_rows)])
+
+        st.divider()
+        st.markdown(f"**Projected Standings — Group {perm_group}**")
+
+        def _color_status_perm(val):
+            if "Qualified" in str(val):
+                return "color:#00c853;font-weight:700;"
+            if "3rd" in str(val):
+                return "color:#ffd600;"
+            if "Eliminated" in str(val):
+                return "color:#f44336;"
+            return ""
+
+        s_perm = perm_df.style
+        styled_perm = s_perm.map(_color_status_perm, subset=["Status"]) \
+                     if hasattr(s_perm, "map") \
+                     else s_perm.applymap(_color_status_perm, subset=["Status"])
+        st.dataframe(styled_perm, width="stretch", hide_index=True)
+        st.caption("Tiebreaker (simplified): Pts → GD → GF. FIFA applies H2H record next.")
 with tab_bracket:
     st.markdown('<p class="section-header">2026 Knockout Bracket</p>', unsafe_allow_html=True)
 
@@ -292,5 +481,99 @@ with tab_bracket:
         ... (same pattern for 1I–1L groups)
         ```
         """)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 4 — GROUP DRAW STRENGTH ANALYSIS
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_groups:
+    st.markdown('<p class="section-header">📋 2026 Group Draw · Strength Analysis</p>', unsafe_allow_html=True)
+    st.caption(
+        "Each group shows team Elo ratings and predicted qualification probability.  "
+        "Elo is trained on WC matches 2010–2026."
+    )
+
+    from goallineiq_utils.models import build_predictor, WC2026_GROUPS, FALLBACK_ELO
+    from goallineiq_utils.api_client import get_all_wc_matches as _gd_get_all
+    from pathlib import Path as _Path
+    import json as _json
+
+    _gd_all = _gd_get_all()
+    _gd_pred = build_predictor(_gd_all)
+
+    # Load simulation advancement % for each team
+    _gd_adv: dict[str, float] = {}
+    try:
+        _sim_path = _Path(__file__).parent.parent / "data_files" / "tournament_simulation.json"
+        _sim_data = _json.loads(_sim_path.read_text(encoding="utf-8"))
+        for _r in _sim_data.get("results", []):
+            _gd_adv[_r["team"]] = _r.get("Round of 32", _r.get("Group Stage", 100.0))
+    except Exception:
+        pass
+
+    group_data_hub = []
+    for _gname, _gteams in sorted(WC2026_GROUPS.items()):
+        _gelos = []
+        for _gt in _gteams:
+            try:
+                _gp = _gd_pred.predict(_gt, _gt, neutral=True)
+                _gelo = int(_gp["home_elo"])
+            except Exception:
+                _gelo = FALLBACK_ELO.get(_gt, 1500)
+            _gelos.append((_gt, _gelo))
+        _gelos.sort(key=lambda x: x[1], reverse=True)
+        _avg_elo = sum(e for _, e in _gelos) / len(_gelos)
+        group_data_hub.append({
+            "group": _gname,
+            "teams": _gelos,
+            "avg_elo": _avg_elo,
+            "strength": "🔥" * min(5, max(1, int((_avg_elo - 1700) / 50))),
+        })
+
+    for _row_start in range(0, 12, 4):
+        _row_groups = group_data_hub[_row_start:_row_start + 4]
+        _gcols = st.columns(4)
+        for _ci, _gdata in enumerate(_row_groups):
+            with _gcols[_ci]:
+                    st.markdown(
+                        f"**Group {_gdata['group']}** {_gdata['strength']}<br>"
+                        f"<small style='color:#9e9e9e;'>Avg Elo: {int(_gdata['avg_elo'])}</small>",
+                        unsafe_allow_html=True,
+                    )
+                    for _rank, (_team, _elo) in enumerate(_gdata["teams"], 1):
+                        _qual = "🟢" if _rank <= 2 else ("🟡" if _rank == 3 else "⚪")
+                        _adv = _gd_adv.get(_team)
+                        _adv_str = f" · {_adv:.0f}% adv" if _adv else ""
+                        st.caption(f"{_qual} {_team} · `{_elo}`{_adv_str}")
+
+    st.caption("🟢 Top 2 qualify · 🟡 Potential 3rd-place qualifier (8 best) · ⚪ Unlikely · Adv % = simulation advancement")
+
+    # Group strength comparison chart
+    st.divider()
+    st.markdown('<p class="section-header">📊 Group Strength Comparison</p>', unsafe_allow_html=True)
+    import plotly.express as _px_gd
+    _strength_rows = []
+    for _gdata in group_data_hub:
+        for _rank, (_team, _elo) in enumerate(_gdata["teams"], 1):
+            _strength_rows.append({"Group": _gdata["group"], "Team": _team, "Elo": _elo, "Rank": _rank})
+    _strength_df = pd.DataFrame(_strength_rows)
+    _fig_gs = _px_gd.bar(
+        _strength_df.groupby("Group")["Elo"].mean().reset_index(),
+        x="Group", y="Elo",
+        color="Elo",
+        color_continuous_scale=["#1a237e", "#00c853"],
+        title="Average Group Elo (higher = stronger group)",
+        height=320,
+    )
+    _BG_HUB = "#e3f2fd" if _is_day else "#071528"
+    _FC_HUB = "#0d1b2a" if _is_day else "#e0f7fa"
+    _fig_gs.update_layout(
+        paper_bgcolor=_BG_HUB, plot_bgcolor=_BG_HUB,
+        font_color=_FC_HUB, coloraxis_showscale=False,
+        margin=dict(l=10, r=10, t=40, b=10),
+    )
+    _fig_gs.update_traces(marker_line_width=0)
+    st.plotly_chart(_fig_gs, width="stretch")
+
 
 add_betting_oracle_footer()

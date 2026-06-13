@@ -33,7 +33,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-from goallineiq_utils.api_client import get_all_wc_matches, get_upcoming_matches, apf_client
+from goallineiq_utils.api_client import get_all_wc_matches, get_upcoming_matches, apf_client, get_match_odds_from_snapshot
 from goallineiq_utils.models import build_predictor, FALLBACK_ELO, WC2026_GROUPS
 from goallineiq_utils.weather import get_weather_for_match
 
@@ -320,18 +320,19 @@ with t3:
         form_df = df.apply(result_for_team, axis=1)
         return form_df
 
+    def color_result(val):
+        if val == "W":
+            return "background-color:#1b5e20;color:white;"
+        elif val == "D":
+            return "background-color:#f57f17;color:white;"
+        else:
+            return "background-color:#b71c1c;color:white;"
+
     form_col1, form_col2 = st.columns(2)
     with form_col1:
         st.markdown(f"**{home_team}**")
         home_form = get_team_form(home_team)
         if not home_form.empty:
-            def color_result(val):
-                if val == "W":
-                    return "background-color:#1b5e20;color:white;"
-                elif val == "D":
-                    return "background-color:#f57f17;color:white;"
-                else:
-                    return "background-color:#b71c1c;color:white;"
             st.dataframe(
                 home_form.style.map(color_result, subset=["Result"]),
                 width="stretch", hide_index=True,
@@ -434,5 +435,32 @@ with t4:
     mc1.metric("Over 2.5 Goals", f"{p_over25*100:.1f}%")
     mc2.metric("Both Teams Score", f"{p_btts*100:.1f}%")
     mc3.metric("Under 2.5 Goals", f"{(1-p_over25)*100:.1f}%")
+
+    # Real bookmaker O/U odds from snapshot
+    snap_odds = get_match_odds_from_snapshot(home_team, away_team)
+    if snap_odds and snap_odds.get("best_ou") and snap_odds["best_ou"].get("over"):
+        bou = snap_odds["best_ou"]
+        st.divider()
+        st.markdown('<p class="section-header">💰 Real O/U Odds vs Model (The Odds API)</p>', unsafe_allow_html=True)
+        ou_rows = [
+            {"Outcome": f"Over {bou['line']}", "Best Odds": bou["over"],
+             "Implied %": round(100/bou["over"],1) if bou["over"] else "—",
+             "Model %": round(p_over25*100,1),
+             "Edge": round((p_over25 - 1/bou["over"])*100,1) if bou["over"] else "—"},
+            {"Outcome": f"Under {bou['line']}", "Best Odds": bou["under"],
+             "Implied %": round(100/bou["under"],1) if bou["under"] else "—",
+             "Model %": round((1-p_over25)*100,1),
+             "Edge": round(((1-p_over25) - 1/bou["under"])*100,1) if bou["under"] else "—"},
+        ]
+        ou_df = pd.DataFrame(ou_rows)
+        def _edge_color(val):
+            if isinstance(val, (int, float)):
+                if val >= 4: return "color:#00c853;font-weight:700;"
+                if val <= -4: return "color:#f44336;"
+            return ""
+        s_ou = ou_df.style
+        st_ou = s_ou.map(_edge_color, subset=["Edge"]) if hasattr(s_ou,"map") else s_ou.applymap(_edge_color, subset=["Edge"])
+        st.dataframe(st_ou, width="stretch", hide_index=True)
+        st.caption(f"Snapshot matched: {snap_odds.get('event_home','')} vs {snap_odds.get('event_away','')}")
 
 add_betting_oracle_footer()

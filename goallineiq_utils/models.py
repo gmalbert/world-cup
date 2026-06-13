@@ -33,6 +33,12 @@ FALLBACK_ELO: Dict[str, float] = {
     "Bahrain": 1750, "Cuba": 1720, "Guatemala": 1730, "El Salvador": 1720,
     "Suriname": 1740, "Kenya": 1760, "Tanzania": 1740, "Libya": 1750,
     "Mozambique": 1735, "Sudan": 1720, "Rwanda": 1730,
+    # Real 2026 WC participants (added from actual draw)
+    "Norway": 1895, "Sweden": 1855, "Bosnia & Herzegovina": 1810,
+    "Cape Verde": 1790, "Curaçao": 1730, "DR Congo": 1800,
+    "Haiti": 1740, "South Africa": 1785, "Uzbekistan": 1770,
+    "Paraguay": 1810, "Algeria": 1820, "Australia": 1870,
+    "Ivory Coast": 1825, "Ghana": 1820,
 }
 
 # ── K-factors by match type ────────────────────────────────────────────────────
@@ -159,8 +165,13 @@ class PoissonModel:
         advantage = 0.0 if neutral else 80.0
         diff = (elo_home + advantage) - elo_away
         p_home = 1.0 / (1.0 + 10.0 ** (-diff / self.ELO_SCALE))
-        lh = np.clip(self.BASE_RATE * (p_home / 0.5), 0.25, 4.5)
-        la = np.clip(self.BASE_RATE * ((1.0 - p_home) / 0.5), 0.25, 4.5)
+        # Scale total goal rate by average Elo: elite matchups are higher-scoring.
+        # Reference: avg WC Elo ~1850 → no adjustment; ±200 Elo → ±~13% total goals.
+        avg_elo = (elo_home + elo_away) / 2.0
+        elo_factor = np.clip(1.0 + (avg_elo - 1850.0) / 1500.0, 0.75, 1.40)
+        base = self.BASE_RATE * elo_factor
+        lh = np.clip(base * (p_home / 0.5), 0.25, 4.5)
+        la = np.clip(base * ((1.0 - p_home) / 0.5), 0.25, 4.5)
         return round(float(lh), 3), round(float(la), 3)
 
     def predict(self, home: str, away: str, neutral: bool = True,
@@ -168,10 +179,17 @@ class PoissonModel:
         """
         Return full prediction dict for home vs away.
         Keys: home_win, draw, away_win, home_xg, away_xg,
-              home_elo, away_elo, top_scorelines
+              home_elo, away_elo, top_scorelines, ou
         """
         elo_h = self.elo.get(home)
         elo_a = self.elo.get(away)
+        return self.predict_with_elo(home, away, elo_h, elo_a, neutral, max_goals)
+
+    def predict_with_elo(self, home: str, away: str,
+                         elo_h: float, elo_a: float,
+                         neutral: bool = True,
+                         max_goals: int = 10) -> Dict:
+        """Internal: predict using caller-supplied (possibly adjusted) Elo values."""
         lh, la = self.expected_goals(elo_h, elo_a, neutral)
 
         prob_matrix = np.outer(
@@ -194,6 +212,17 @@ class PoissonModel:
         }
         top_scorelines = sorted(score_probs.items(), key=lambda x: -x[1])[:8]
 
+        # Over/Under probabilities for standard goal lines
+        ou: Dict[float, Dict[str, float]] = {}
+        for line in (1.5, 2.5, 3.5):
+            over_p = float(sum(
+                prob_matrix[h, a]
+                for h in range(max_goals + 1)
+                for a in range(max_goals + 1)
+                if h + a > line
+            ))
+            ou[line] = {"over": round(over_p, 4), "under": round(1.0 - over_p, 4)}
+
         return {
             "home_win": round(home_win, 4),
             "draw": round(draw, 4),
@@ -203,6 +232,7 @@ class PoissonModel:
             "home_elo": elo_h,
             "away_elo": elo_a,
             "top_scorelines": top_scorelines,
+            "ou": ou,
         }
 
     def value_edges(self, pred: Dict, odds_h: float, odds_d: float,
@@ -244,7 +274,30 @@ class MatchPredictor:
         self.elo.train_on_history(completed)
         self._trained = True
 
-    def predict(self, home: str, away: str, neutral: bool = True) -> Dict:
+    def predict(self, home: str, away: str, neutral: bool = True,
+                stage: str = "group") -> Dict:
+        """
+        Generate a match prediction.
+
+        Parameters
+        ----------
+        stage : str
+            Tournament stage.  One of ``"group"``, ``"r32"``, ``"r16"``,
+            ``"quarterfinal"``, ``"semifinal"``, ``"final"``.
+            Knockout stages apply a 10 % Elo regression-to-mean so that
+            surviving teams converge slightly toward parity — matching the
+            empirical observation that upsets are more common in do-or-die
+            single-leg matches (no draws) than in group play.
+        """
+        if stage != "group":
+            # Regress both teams 10 % toward the average WC Elo (~1850)
+            MEAN_ELO = 1850.0
+            REGRESS  = 0.10
+            elo_h_raw = self.elo.get(home)
+            elo_a_raw = self.elo.get(away)
+            adj_h = elo_h_raw + REGRESS * (MEAN_ELO - elo_h_raw)
+            adj_a = elo_a_raw + REGRESS * (MEAN_ELO - elo_a_raw)
+            return self.model.predict_with_elo(home, away, adj_h, adj_a, neutral)
         return self.model.predict(home, away, neutral)
 
     def predict_batch(self, matches: pd.DataFrame) -> pd.DataFrame:
@@ -287,18 +340,18 @@ def build_predictor(historical_df: Optional[pd.DataFrame] = None) -> MatchPredic
     return predictor
 
 
-# ── 2026 WC Groups (used as fallback when API is unavailable) ─────────────────
+# ── 2026 WC Groups (actual draw — 48 teams, 12 groups of 4) ──────────────────
 WC2026_GROUPS: Dict[str, List[str]] = {
-    "A": ["Mexico", "Jamaica", "Honduras", "Suriname"],
-    "B": ["Argentina", "Chile", "Peru", "Canada"],
-    "C": ["USA", "Panama", "Bolivia", "New Zealand"],
-    "D": ["France", "Morocco", "Tunisia", "Mali"],
-    "E": ["Spain", "Colombia", "Ecuador", "Palestine"],
-    "F": ["Brazil", "Uruguay", "Paraguay", "Bahrain"],
-    "G": ["England", "Serbia", "Slovakia", "Sudan"],
-    "H": ["Germany", "Turkey", "Austria", "Tanzania"],
-    "I": ["Portugal", "Poland", "Scotland", "Kenya"],
-    "J": ["Netherlands", "South Korea", "Japan", "Libya"],
-    "K": ["Belgium", "Croatia", "Denmark", "Mozambique"],
-    "L": ["Switzerland", "Senegal", "Nigeria", "Rwanda"],
+    "A": ["Mexico", "South Korea", "Czech Republic", "South Africa"],
+    "B": ["Canada", "Switzerland", "Qatar", "Bosnia & Herzegovina"],
+    "C": ["Brazil", "Morocco", "Scotland", "Haiti"],
+    "D": ["USA", "Paraguay", "Australia", "Turkey"],
+    "E": ["Germany", "Ecuador", "Ivory Coast", "Curaçao"],
+    "F": ["Netherlands", "Japan", "Sweden", "Tunisia"],
+    "G": ["Belgium", "Egypt", "Iran", "New Zealand"],
+    "H": ["Spain", "Uruguay", "Saudi Arabia", "Cape Verde"],
+    "I": ["France", "Senegal", "Norway", "Iraq"],
+    "J": ["Argentina", "Algeria", "Austria", "Jordan"],
+    "K": ["Portugal", "Colombia", "DR Congo", "Uzbekistan"],
+    "L": ["England", "Croatia", "Ghana", "Panama"],
 }

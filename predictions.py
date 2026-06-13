@@ -192,12 +192,12 @@ st.markdown(
 # ══════════════════════════════════════════════════════════════════════════════
 from goallineiq_utils.api_client import (
     get_all_wc_matches, get_upcoming_matches, get_current_standings,
-    bdl_client, apf_client, WC_NAMES,
+    bdl_client, apf_client, WC_NAMES, load_predictions_cache,
 )
 from goallineiq_utils.models import build_predictor, WC2026_GROUPS, FALLBACK_ELO
 from goallineiq_utils.timezone_utils import (
     assign_realistic_match_times, format_datetime_local, format_match_time_friendly,
-    add_browser_timezone_js
+    add_browser_timezone_js, format_match_time_local, get_user_timezone,
 )
 from goallineiq_utils.weather import get_weather_for_match
 from footer import add_betting_oracle_footer
@@ -212,8 +212,8 @@ def home_page():
     <style>
         .main-title {font-size:2.8rem;font-weight:800;margin-bottom:0;}
         .sub-title  {font-size:3.2rem;font-weight:800;color:#9e9e9e;line-height:1; margin-top:0; margin-bottom:0;}
-        .hero-table {width:100%; border-collapse:collapse; table-layout:fixed;}
-        .hero-table td {vertical-align:bottom; padding:0;}
+        .hero-table {width:100%; border-collapse:collapse; table-layout:fixed; border:none !important;}
+        .hero-table tr, .hero-table td {border:none !important; vertical-align:bottom; padding:0;}
         .hero-logo {width:375px; max-width:100%; display:block;}
         .hero-text {padding-left:1rem;}
         .sub-title-note {font-size:0.92rem;color:#9e9e9e;margin-top:0.15rem;margin-bottom:0;}
@@ -311,55 +311,11 @@ def home_page():
                     st.metric(f"{flag} {nation}", "Host Nation", city)
         st.divider()
 
-    # ── Group Draw with Elo Ratings ───────────────────────────────────────────
-    if days_to > 30 or live:  # Show if tournament is approaching or live
-        st.markdown('<p class="section-header">📋 2026 Group Draw · Strength Analysis</p>', unsafe_allow_html=True)
-        st.caption("Each group shows team Elo ratings and predicted advancement probabilities")
-        
-        # Calculate group strength and advancement probabilities
-        group_data = []
-        for group_name, teams in sorted(WC2026_GROUPS.items()):
-            group_elos = []
-            for team in teams:
-                try:
-                    # Get Elo from predictor
-                    dummy_pred = predictor.predict(team, team, neutral=True)
-                    elo = int(dummy_pred['home_elo'])
-                except Exception:
-                    elo = FALLBACK_ELO.get(team, 1500)
-                group_elos.append((team, elo))
-            
-            # Sort by Elo (strongest first)
-            group_elos.sort(key=lambda x: x[1], reverse=True)
-            avg_elo = sum(e for _, e in group_elos) / len(group_elos)
-            
-            group_data.append({
-                'group': group_name,
-                'teams': group_elos,
-                'avg_elo': avg_elo,
-                'strength': '🔥' * min(5, int((avg_elo - 1400) / 100))
-            })
-        
-        # Display groups in a grid (4 columns x 3 rows = 12 groups)
-        for row_start in range(0, 12, 4):
-            row_groups = group_data[row_start:row_start + 4]
-            group_cols = st.columns(4)
-            for col_idx, gdata in enumerate(row_groups):
-                with group_cols[col_idx]:
-                    with st.container(border=True):
-                        st.markdown(
-                            f"**Group {gdata['group']}** {gdata['strength']}<br>"
-                            f"<small style='color:#9e9e9e;'>Avg Elo: {int(gdata['avg_elo'])}</small>",
-                            unsafe_allow_html=True
-                        )
-                        for rank, (team, elo) in enumerate(gdata['teams'], 1):
-                            qual_emoji = "🟢" if rank <= 2 else "🟡" if rank == 3 else "⚪"
-                            st.caption(f"{qual_emoji} {team} · `{elo}`")
-        
-        st.caption("🟢 Top 2 qualify · 🟡 Best 3rd place teams (8 total) · ⚪ Eliminated")
-        st.divider()
-
     # ── Load data & train model ───────────────────────────────────────────────
+    # Try pre-computed cache first (nightly GitHub Actions) to avoid live Elo training
+    _predictions_cache = load_predictions_cache()
+    _using_cache = _predictions_cache is not None
+
     with st.spinner("Loading historical World Cup data (2010–2026)…"):
         all_matches = get_all_wc_matches()
     predictor = build_predictor(all_matches)
@@ -367,16 +323,34 @@ def home_page():
     if not all_matches.empty:
         coverage = all_matches.groupby("season")["home_team"].count().reset_index()
         coverage.columns = ["Season", "Matches Loaded"]
-        with st.expander("📥 Data Coverage", expanded=False):
+        with st.expander("📥 Data Coverage & Model Reference", expanded=False):
             st.dataframe(coverage, width="stretch", hide_index=True)
             st.caption("Sources: openfootball (2010, 2014) · BALLDONTLIE FIFA API (2018, 2022, 2026)")
+            st.divider()
+            st.markdown("#### 📖 Elo & Model Data Dictionary")
+            st.markdown("""
+| Term | Description |
+|---|---|
+| **Elo Rating** | A numerical team strength score updated after every match. Higher = stronger. World-class teams sit around 1950–2100; average WC teams around 1800–1900. |
+| **Elo Differential** | The gap between two teams' Elo ratings. Drives the win-probability calculation — a +200 Elo gap implies ~76 % win probability for the stronger side. |
+| **K-Factor** | Controls how quickly Elo updates after a result. World Cup matches use K=60; qualifiers K=40; friendlies K=20. Larger K = bigger swings. |
+| **Home Advantage** | +80 Elo points added to the home team when `neutral=False` (non-neutral venue). All tournament predictions use neutral site. |
+| **xG (Expected Goals)** | Model-estimated goals for each side based on Elo differential and an average World Cup scoring rate of 1.32 goals/team/match. Scaled by average team Elo so elite matchups produce higher totals. |
+| **home_win / draw / away_win** | Win/draw/loss probabilities derived from the Poisson score distribution. Always sum to 1. |
+| **O/U 1.5 / 2.5 / 3.5** | Probability that the total goals in the match exceeds that line, computed from the joint Poisson distribution of home and away goals. |
+| **Elo Factor** | Per-match scaling applied to xG: `1 + (avg_elo − 1850) / 1500`. Ranges ~0.75× (weakest) to ~1.40× (strongest elite clash). Ensures O/U varies realistically by matchup quality. |
+| **Market Implied Probability** | `1 / decimal_odds`. A 1.91 line implies 52.4 %. Sum of all implied probs for a market > 1 = bookmaker overround. |
+| **Edge** | `model_probability − market_implied_probability`. Positive edge = model thinks the outcome is more likely than the price implies. |
+| **Overround (Vig)** | The bookmaker's built-in margin. Typical sportsbooks run 4–6 % on 1X2; O/U 2.5 lines usually offered at 1.91/1.91 (~4.7 % overround). |
+| **Fair Odds** | `1 / model_probability` — what the decimal odds *would* be at zero margin. |
+""")
 
     # ── Upcoming match predictions ────────────────────────────────────────────
     st.markdown('<p class="section-header">⚽ Upcoming Match Predictions</p>', unsafe_allow_html=True)
-    
-    # Add timezone detection JS
-    add_browser_timezone_js()
-    
+
+    # Render sidebar timezone selector (stores choice in session_state for format_match_time_local)
+    get_user_timezone()
+
     upcoming = get_upcoming_matches(n=16)
     
     # Assign realistic match times to fixtures
@@ -384,22 +358,43 @@ def home_page():
         upcoming = assign_realistic_match_times(upcoming)
 
     if upcoming is not None and not upcoming.empty:
-        pred_rows = []
-        for _, row in upcoming.iterrows():
-            home = str(row.get("home_team", ""))
-            away = str(row.get("away_team", ""))
-            if home and away:
-                p = predictor.predict(home, away, neutral=True)
-                pred_rows.append({
-                    "home_team": home, "away_team": away,
-                    "date": row.get("date"), "round": row.get("round", ""),
-                    "venue": row.get("venue", ""),
-                    "city": row.get("city", ""),
-                    "home_win": p["home_win"], "draw": p["draw"], "away_win": p["away_win"],
-                    "home_xg": p["home_xg"], "away_xg": p["away_xg"],
-                    "home_elo": p["home_elo"], "away_elo": p["away_elo"],
-                })
+        # Use pre-computed cache when available; fall back to live prediction
+        if _using_cache and _predictions_cache.get("match_predictions"):
+            pred_rows = _predictions_cache["match_predictions"][:16]
+            # Merge date/venue from upcoming snapshot (cache may be a day old)
+            _up_map = {}
+            for _, _ur in upcoming.iterrows():
+                _key = (str(_ur.get("home_team","")), str(_ur.get("away_team","")))
+                _up_map[_key] = _ur
+            for pr in pred_rows:
+                _ur = _up_map.get((pr.get("home_team",""), pr.get("away_team","")))
+                if _ur is not None:
+                    pr["date"]  = _ur.get("date", pr.get("date"))
+                    pr["venue"] = _ur.get("venue", pr.get("venue",""))
+                    pr["city"]  = _ur.get("city",  pr.get("city",""))
+        else:
+            pred_rows = []
+            for _, row in upcoming.iterrows():
+                home = str(row.get("home_team", ""))
+                away = str(row.get("away_team", ""))
+                if home and away:
+                    p = predictor.predict(home, away, neutral=True)
+                    pred_rows.append({
+                        "home_team": home, "away_team": away,
+                        "date": row.get("date"), "round": row.get("round", ""),
+                        "venue": row.get("venue", ""),
+                        "city": row.get("city", ""),
+                        "home_win": p["home_win"], "draw": p["draw"], "away_win": p["away_win"],
+                        "home_xg": p["home_xg"], "away_xg": p["away_xg"],
+                        "home_elo": p["home_elo"], "away_elo": p["away_elo"],
+                        "ou": p.get("ou", {}),
+                    })
         if pred_rows:
+            _cache_age = ""
+            if _using_cache:
+                _gen = _predictions_cache.get("generated_at", "")
+                _cache_age = f"  ·  Predictions cached {_gen[:10]}" if _gen else ""
+            st.caption(f"Showing {len(pred_rows)} upcoming fixtures{_cache_age}")
             cols = st.columns(2)
             for idx, pred in enumerate(pred_rows):
                 col = cols[idx % 2]
@@ -439,7 +434,27 @@ def home_page():
                                 caption_parts.append(f"{weather_emoji} {weather['temperature_f']}°F")
                         
                         st.caption("  |  ".join(caption_parts))
-                        st.caption(f"Expected Goals: {pred['home_xg']:.2f} – {pred['away_xg']:.2f}")
+                        # O/U row
+                        ou    = pred.get("ou", {})
+                        ou25  = ou.get(2.5, {})
+                        if ou25:
+                            over_p  = ou25["over"]  * 100
+                            under_p = ou25["under"] * 100
+                            MARKET_OU_IMP = 1.0 / 1.91
+                            ou_edge  = ou25["over"]  - MARKET_OU_IMP
+                            u_edge   = ou25["under"] - MARKET_OU_IMP
+                            if ou_edge >= 0.04:
+                                ou_sig = f"🟢 OVER +{ou_edge*100:.1f}%"
+                            elif u_edge >= 0.04:
+                                ou_sig = f"🔴 UNDER +{u_edge*100:.1f}%"
+                            else:
+                                ou_sig = "⚪ no edge"
+                            st.caption(
+                                f"xG: {pred['home_xg']:.2f} – {pred['away_xg']:.2f}  "
+                                f"|  ⚽ O/U 2.5: Over {over_p:.0f}% / Under {under_p:.0f}%  {ou_sig}"
+                            )
+                        else:
+                            st.caption(f"Expected Goals: {pred['home_xg']:.2f} – {pred['away_xg']:.2f}")
     else:
         st.info("Live fixture data not yet available — showing model predictions for selected group matches.")
         sample_matches = [
@@ -470,91 +485,390 @@ def home_page():
                         </div>""",
                         unsafe_allow_html=True,
                     )
-                    st.caption(f"xG: {p['home_xg']:.2f} – {p['away_xg']:.2f}")
+                    ou25 = p.get("ou", {}).get(2.5, {})
+                    if ou25:
+                        ov = ou25["over"] * 100
+                        un = ou25["under"] * 100
+                        MARKET_OU_IMP = 1.0 / 1.91
+                        ou_edge = ou25["over"] - MARKET_OU_IMP
+                        u_edge  = ou25["under"] - MARKET_OU_IMP
+                        if ou_edge >= 0.04:
+                            ou_sig = f"🟢 OVER +{ou_edge*100:.1f}%"
+                        elif u_edge >= 0.04:
+                            ou_sig = f"🔴 UNDER +{u_edge*100:.1f}%"
+                        else:
+                            ou_sig = "⚪ no edge"
+                        st.caption(
+                            f"xG: {p['home_xg']:.2f} – {p['away_xg']:.2f}  "
+                            f"|  ⚽ O/U 2.5: Over {ov:.0f}% / Under {un:.0f}%  {ou_sig}"
+                        )
+                    else:
+                        st.caption(f"xG: {p['home_xg']:.2f} – {p['away_xg']:.2f}")
 
-    # ── Value bet alerts ──────────────────────────────────────────────────────
+    # ── Today's Best Bets — top recommendations with confidence ─────────────
     st.divider()
-    st.markdown('<p class="section-header">💰 Top Value Bets (Model Edge)</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-header">🏆 Today\'s Best Bets</p>', unsafe_allow_html=True)
     st.caption(
-        "Best betting opportunities where our model finds significant value vs market odds. "
-        "Edge shows model probability minus implied market probability."
+        "Model's top picks ranked by edge vs market benchmarks. "
+        "1X2 edge vs 5 % margin proxy · O/U edge vs 1.91 line. "
+        "Confidence = model win probability."
     )
-    
-    # Calculate value bets from upcoming matches
-    value_threshold = 0.05  # 5% edge minimum
-    value_opportunities = []
-    
-    if upcoming is not None and not upcoming.empty:
-        for _, match in upcoming.head(12).iterrows():
+
+    # Pull real odds from snapshot once (no extra API call)
+    try:
+        from goallineiq_utils.api_client import get_match_odds_from_snapshot as _get_odds
+        _real_odds_available = True
+    except Exception:
+        _real_odds_available = False
+
+    _best_bets_list: list[dict] = []
+    _src_upcoming = upcoming if (upcoming is not None and not upcoming.empty) else None
+
+    if _src_upcoming is not None:
+        for _, _match in _src_upcoming.head(12).iterrows():
+            _home = str(_match.get("home_team", ""))
+            _away = str(_match.get("away_team", ""))
+            if not _home or not _away:
+                continue
+            try:
+                _pred = predictor.predict(_home, _away, neutral=True)
+            except Exception:
+                continue
+
+            _hw_p, _dr_p, _aw_p = _pred["home_win"], _pred["draw"], _pred["away_win"]
+            _ou25 = _pred.get("ou", {}).get(2.5, {"over": 0.5, "under": 0.5})
+            _xg_total = round(_pred["home_xg"] + _pred["away_xg"], 2)
+
+            # Try real snapshot odds first; fall back to 5% margin benchmark
+            _mkt_h = _mkt_d = _mkt_a = _mkt_ou_over = _mkt_ou_under = None
+            _odds_source = "proxy"
+            if _real_odds_available:
+                _snap = _get_odds(_home, _away)
+                if _snap and _snap.get("best_h2h"):
+                    _b = _snap["best_h2h"]
+                    if _b.get("home"): _mkt_h = 1.0 / _b["home"]
+                    if _b.get("draw"): _mkt_d = 1.0 / _b["draw"]
+                    if _b.get("away"): _mkt_a = 1.0 / _b["away"]
+                    _bou = _snap.get("best_ou", {})
+                    if _bou.get("over"):  _mkt_ou_over  = 1.0 / _bou["over"]
+                    if _bou.get("under"): _mkt_ou_under = 1.0 / _bou["under"]
+                    if any([_mkt_h, _mkt_d, _mkt_a]):
+                        _odds_source = "real"
+
+            # Fall back to margin proxy
+            if _mkt_h is None: _mkt_h = _hw_p / 1.05
+            if _mkt_d is None: _mkt_d = _dr_p / 1.05
+            if _mkt_a is None: _mkt_a = _aw_p / 1.05
+            if _mkt_ou_over  is None: _mkt_ou_over  = 1.0 / 1.91
+            if _mkt_ou_under is None: _mkt_ou_under = 1.0 / 1.91
+
+            _THRESH = 0.04
+            for _label, _prob, _mkt_imp, _bet_type in [
+                (f"{_home} Win",  _hw_p,             _mkt_h,        "1X2"),
+                ("Draw",          _dr_p,             _mkt_d,        "1X2"),
+                (f"{_away} Win",  _aw_p,             _mkt_a,        "1X2"),
+                ("Over 2.5",      _ou25["over"],     _mkt_ou_over,  "O/U"),
+                ("Under 2.5",     _ou25["under"],    _mkt_ou_under, "O/U"),
+            ]:
+                _edge = _prob - _mkt_imp
+                if _edge >= _THRESH:
+                    _best_bets_list.append({
+                        "match": f"{_home} vs {_away}",
+                        "bet": _label,
+                        "bet_type": _bet_type,
+                        "prob": _prob,
+                        "edge": _edge,
+                        "xg_total": _xg_total if _bet_type == "O/U" else None,
+                        "odds_source": _odds_source,
+                        "home_elo": int(_pred["home_elo"]),
+                        "away_elo": int(_pred["away_elo"]),
+                    })
+
+    _best_bets_list.sort(key=lambda x: x["edge"], reverse=True)
+    _top_bets = _best_bets_list[:8]
+
+    if _top_bets:
+        st.success(f"✅ Found **{len(_top_bets)}** value bets for upcoming fixtures")
+        _bbcols = st.columns(2)
+        for _i, _bet in enumerate(_top_bets):
+            _col = _bbcols[_i % 2]
+            _prob_pct = _bet["prob"] * 100
+            _edge_pct = _bet["edge"] * 100
+            if _prob_pct >= 65:
+                _conf_label, _conf_color = "HIGH", "#00c853"
+            elif _prob_pct >= 50:
+                _conf_label, _conf_color = "MEDIUM", "#ffd600"
+            else:
+                _conf_label, _conf_color = "SPECULATIVE", "#ff9800"
+
+            _src_badge = "📡 Real odds" if _bet["odds_source"] == "real" else "📐 Model proxy"
+            _xg_note = f"  xG {_bet['xg_total']}" if _bet["xg_total"] else ""
+
+            with _col:
+                with st.container(border=True):
+                    st.markdown(
+                        f"<div style='font-size:0.8rem;color:#9e9e9e;'>{_bet['match']}{_xg_note} · {_src_badge}</div>"
+                        f"<div style='font-size:1.3rem;font-weight:800;margin:4px 0;'>BET: {_bet['bet']}</div>"
+                        f"<div style='display:flex;gap:8px;align-items:center;'>"
+                        f"<span style='background:{_conf_color};color:#000;padding:2px 8px;"
+                        f"border-radius:4px;font-size:0.78rem;font-weight:700;'>{_conf_label}</span>"
+                        f"<span style='font-size:0.9rem;'>Model: <strong>{_prob_pct:.1f}%</strong>"
+                        f" · Edge: <strong style='color:{_conf_color};'>+{_edge_pct:.1f}%</strong></span>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                    # Confidence bar
+                    st.markdown(
+                        f"<div style='background:#1a1c2e;border-radius:4px;height:6px;margin:6px 0;overflow:hidden;'>"
+                        f"<div style='width:{_prob_pct:.0f}%;background:{_conf_color};height:100%;'></div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                    # Plain-English reasoning
+                    _elo_gap = abs(_bet["home_elo"] - _bet["away_elo"])
+                    if _bet["bet_type"] == "O/U":
+                        _reason = (
+                            f"xG total {_bet['xg_total']} {'above' if 'Over' in _bet['bet'] else 'below'} "
+                            f"the 2.5 line. Model sees {'a high-scoring' if 'Over' in _bet['bet'] else 'a tight, low-scoring'} match."
+                        )
+                    elif "Draw" in _bet["bet"]:
+                        _reason = f"Teams are closely matched (Elo gap {_elo_gap}). A draw is underpriced by the market."
+                    else:
+                        _favoured = "home" if "Win" in _bet["bet"] and _bet["home_elo"] > _bet["away_elo"] else "away"
+                        _reason = f"Elo advantage of {_elo_gap} pts. Market undervalues the {'stronger' if _elo_gap > 100 else 'slightly favoured'} side."
+                    st.caption(_reason)
+    else:
+        st.info("No clear value bets found for upcoming fixtures. Check back closer to match day with live odds active.")
+
+    # ── Upset Watch ───────────────────────────────────────────────────────────
+    st.divider()
+    st.markdown('<p class="section-header">⚡ Upset Watch</p>', unsafe_allow_html=True)
+    st.caption(
+        "Upcoming matches where the Elo underdog has a meaningful win chance. "
+        "Probabilities ≥ 25 % trigger an alert."
+    )
+
+    # Prefer pre-computed cache; format dates in user's local timezone
+    if _using_cache and _predictions_cache.get("upset_watch"):
+        _upset_raw = _predictions_cache["upset_watch"]
+        _upset_rows = []
+        for _ur2 in _upset_raw:
+            _raw_date = _ur2.get("date", "TBD")
+            try:
+                _dt2 = pd.to_datetime(_raw_date, utc=True, errors="coerce")
+                _date_str2 = format_match_time_local(_dt2) if pd.notna(_dt2) else _raw_date
+            except Exception:
+                _date_str2 = _raw_date
+            _upset_rows.append({
+                "Date": _date_str2,
+                "Match": _ur2["match"],
+                "Favourite": _ur2["favourite"],
+                "Underdog": _ur2["underdog"],
+                "Elo Gap": _ur2["elo_gap"],
+                "Upset %": f"{_ur2['upset_pct']:.1f}",
+                "Underdog xG": f"{_ur2['underdog_xg']:.3f}",
+            })
+    elif upcoming is not None and not upcoming.empty:
+        _upset_rows = []
+        for _, _urow in upcoming.iterrows():
+            _uh = str(_urow.get("home_team", ""))
+            _ua = str(_urow.get("away_team", ""))
+            if not _uh or not _ua:
+                continue
+            try:
+                _up = predictor.predict(_uh, _ua, neutral=True)
+                _elo_h, _elo_a = _up["home_elo"], _up["away_elo"]
+                if _elo_h < _elo_a:
+                    _underdog, _fav = _uh, _ua
+                    _upset_p = _up["home_win"]
+                    _gap = _elo_a - _elo_h
+                else:
+                    _underdog, _fav = _ua, _uh
+                    _upset_p = _up["away_win"]
+                    _gap = _elo_h - _elo_a
+                _raw_dt = _urow.get("date")
+                _date_str = "TBD"
+                if _raw_dt is not None:
+                    try:
+                        _dt = pd.to_datetime(_raw_dt, utc=True, errors="coerce")
+                        if pd.notna(_dt):
+                            _date_str = format_match_time_local(_dt)
+                    except Exception:
+                        pass
+                _upset_rows.append({
+                    "Date": _date_str,
+                    "Match": f"{_uh} vs {_ua}",
+                    "Favourite": _fav,
+                    "Underdog": _underdog,
+                    "Elo Gap": int(_gap),
+                    "Upset %": f"{_upset_p * 100:.1f}",
+                    "Underdog xG": f"{(_up['home_xg'] if _underdog == _uh else _up['away_xg']):.3f}",
+                })
+            except Exception:
+                continue
+    else:
+        _upset_rows = []
+
+    if _upset_rows:
+            _upset_df = pd.DataFrame(_upset_rows).sort_values("Upset %", ascending=False)
+
+            def _upset_col(val):
+                # val is now a string like "31.0" — compare numerically
+                try:
+                    f = float(val)
+                    if f >= 30: return "color:#00c853;font-weight:700;"
+                    if f >= 20: return "color:#ffd600;font-weight:700;"
+                except Exception:
+                    pass
+                return ""
+
+            _su = _upset_df.style
+            _styled_u = _su.map(_upset_col, subset=["Upset %"]) \
+                        if hasattr(_su, "map") \
+                        else _su.applymap(_upset_col, subset=["Upset %"])
+            st.dataframe(_styled_u, width="stretch", hide_index=True)
+
+            _big = _upset_df[_upset_df["Upset %"].astype(float) >= 25]
+            if not _big.empty:
+                st.warning(
+                    f"⚠️ {len(_big)} upset alert(s): "
+                    + ", ".join(
+                        f"**{r['Underdog']}** vs {r['Favourite']} ({float(r['Upset %']):.0f}%)"
+                        for _, r in _big.iterrows()
+                    )
+                )
+    else:
+        st.info("Upcoming fixture data not yet available for upset analysis.")
+
+    # ── Bet Assessment (O/U + 1X2 vs real market benchmarks) ─────────────────
+    st.divider()
+    st.markdown('<p class="section-header">💰 Bet Assessment — Model vs Market Lines</p>', unsafe_allow_html=True)
+    st.caption(
+        "**O/U 2.5:** model probability vs standard 1.91 line (52.4 % implied each side).  "
+        "**1X2:** model fair odds vs a 5 % bookmaker margin proxy.  "
+        "Edge ≥ 4 % flagged as value (✅).  "
+        "For live sportsbook prices visit the **Odds Comparison** page."
+    )
+
+    BM_MARGIN_1X2  = 1.05
+    MARKET_OU_LINE = 1.91
+    MARKET_OU_IMP  = 1.0 / MARKET_OU_LINE
+    VALUE_THRESHOLD = 0.04
+
+    bet_rows: list[dict] = []
+    src_df = upcoming if (upcoming is not None and not upcoming.empty) else None
+
+    if src_df is not None:
+        for _, match in src_df.head(12).iterrows():
             home = str(match.get("home_team", ""))
             away = str(match.get("away_team", ""))
             if not home or not away:
                 continue
-                
             try:
                 pred = predictor.predict(home, away, neutral=True)
-                
-                # Generate market odds (1.04 margin for realistic estimates)
-                margin = 1.04
-                market_h = 1 / (pred["home_win"] * margin)
-                market_d = 1 / (pred["draw"] * margin)
-                market_a = 1 / (pred["away_win"] * margin)
-                
-                # Calculate edges
-                edge_h = pred["home_win"] - (1/market_h)
-                edge_d = pred["draw"] - (1/market_d)
-                edge_a = pred["away_win"] - (1/market_a)
-                
-                # Collect all outcomes with edges
-                opportunities = [
-                    (f"{home} vs {away}", f"{home} Win", edge_h, market_h, pred["home_win"]),
-                    (f"{home} vs {away}", "Draw", edge_d, market_d, pred["draw"]),
-                    (f"{home} vs {away}", f"{away} Win", edge_a, market_a, pred["away_win"]),
-                ]
-                
-                for match_label, outcome, edge, odds, model_prob in opportunities:
-                    if edge >= value_threshold:
-                        value_opportunities.append({
-                            "match": match_label,
-                            "outcome": outcome,
-                            "model_prob": model_prob,
-                            "market_odds": odds,
-                            "edge": edge
-                        })
             except Exception:
                 continue
-    
-    # Sort by edge and show top 5
-    value_opportunities.sort(key=lambda x: x["edge"], reverse=True)
-    top_bets = value_opportunities[:5]
-    
-    if top_bets:
-        st.success(f"✅ Found {len(top_bets)} strong value bets (edge ≥ {value_threshold*100:.0f}%)")
-        
-        for i, bet in enumerate(top_bets, 1):
-            implied = 1.0 / bet["market_odds"]
-            edge = bet["edge"]
-            badge_color = "#00c853"
-            
-            with st.container(border=True):
-                vc1, vc2, vc3, vc4 = st.columns([3, 2, 2, 3])
-                vc1.markdown(f"**#{i}  {bet['match']}**")
-                vc2.markdown(f"`{bet['outcome']}`")
-                vc3.metric(
-                    "Model Prob", 
-                    f"{bet['model_prob']*100:.1f}%",
-                    delta=f"{edge*100:+.1f}% edge",
-                    delta_color="normal"
-                )
-                vc4.markdown(
-                    f"Best Odds: **{bet['market_odds']:.2f}** → Implied: {implied*100:.1f}%  \n"
-                    f"<span style='color:{badge_color};font-weight:700;'>🎯 Edge: {edge*100:+.1f}%</span>",
-                    unsafe_allow_html=True,
-                )
+
+            hw_p, dr_p, aw_p = pred["home_win"], pred["draw"], pred["away_win"]
+            ou25 = pred.get("ou", {}).get(2.5, {"over": 0.5, "under": 0.5})
+
+            # Fair decimal odds (zero margin)
+            fair_h = round(1 / hw_p, 2) if hw_p > 0 else 0
+            fair_d = round(1 / dr_p, 2) if dr_p > 0 else 0
+            fair_a = round(1 / aw_p, 2) if aw_p > 0 else 0
+
+            # Market-implied probs after BM_MARGIN_1X2 overround
+            mkt_h = hw_p / BM_MARGIN_1X2
+            mkt_d = dr_p / BM_MARGIN_1X2
+            mkt_a = aw_p / BM_MARGIN_1X2
+            mkt_h_odds = round(1 / mkt_h, 2)
+            mkt_d_odds = round(1 / mkt_d, 2)
+            mkt_a_odds = round(1 / mkt_a, 2)
+
+            def _sig(edge_val: float) -> str:
+                return f"✅ +{edge_val*100:.1f}%" if edge_val >= VALUE_THRESHOLD else "—"
+
+            ou_over_edge  = ou25["over"]  - MARKET_OU_IMP
+            ou_under_edge = ou25["under"] - MARKET_OU_IMP
+            if ou_over_edge >= VALUE_THRESHOLD:
+                ou_sig = f"✅ OVER +{ou_over_edge*100:.1f}%"
+            elif ou_under_edge >= VALUE_THRESHOLD:
+                ou_sig = f"✅ UNDER +{ou_under_edge*100:.1f}%"
+            else:
+                ou_sig = "—"
+
+            bet_rows.append({
+                "Match": f"{home} vs {away}",
+                "xG": round(pred["home_xg"] + pred["away_xg"], 3),
+                "Over 2.5": f"{ou25['over']*100:.1f}%",
+                "Under 2.5": f"{ou25['under']*100:.1f}%",
+                "O/U Edge": ou_sig,
+                "Home Win": f"{hw_p*100:.1f}%",
+                "H Fair": fair_h, "H Mkt": mkt_h_odds,
+                "H Edge": _sig(hw_p - mkt_h),
+                "Draw": f"{dr_p*100:.1f}%",
+                "D Fair": fair_d, "D Mkt": mkt_d_odds,
+                "D Edge": _sig(dr_p - mkt_d),
+                "Away Win": f"{aw_p*100:.1f}%",
+                "A Fair": fair_a, "A Mkt": mkt_a_odds,
+                "A Edge": _sig(aw_p - mkt_a),
+            })
+
+    if bet_rows:
+        bet_df = pd.DataFrame(bet_rows)
+        tab_ou, tab_1x2 = st.tabs(["⚽ Over/Under 2.5", "🏆 1X2 Result"])
+
+        def _green_if_value(val):
+            if isinstance(val, str) and val.startswith("✅"):
+                return "color:#00c853;font-weight:700;"
+            return ""
+
+        with tab_ou:
+            st.caption(
+                f"Benchmark: 1.91 / 1.91 (52.4 % implied each side).  "
+                f"Edge ≥ {VALUE_THRESHOLD*100:.0f} % flagged ✅."
+            )
+            ou_cols = ["Match", "xG", "Over 2.5", "Under 2.5", "O/U Edge"]
+            s = bet_df[ou_cols].style
+            styled_ou = s.map(_green_if_value, subset=["O/U Edge"]) if hasattr(s, "map") \
+                        else s.applymap(_green_if_value, subset=["O/U Edge"])
+            st.dataframe(styled_ou, width="stretch", hide_index=True)
+            ou_hits = [r for r in bet_rows if r["O/U Edge"] != "—"]
+            if ou_hits:
+                st.success(f"✅ {len(ou_hits)} O/U value bet(s) vs standard 1.91 line")
+                for v in ou_hits[:6]:
+                    st.markdown(
+                        f"**{v['Match']}** · xG total {v['xG']} · "
+                        f"Over {v['Over 2.5']} / Under {v['Under 2.5']} · {v['O/U Edge']}"
+                    )
+            else:
+                st.info("No O/U value bets vs the 1.91 benchmark in this fixture window.")
+
+        with tab_1x2:
+            st.caption(
+                f"Benchmark: model fair odds ÷ 1.05 overround (~5 % margin proxy).  "
+                f"For live odds use **Odds Comparison**.  "
+                f"Edge ≥ {VALUE_THRESHOLD*100:.0f} % flagged ✅."
+            )
+            x12_cols = [
+                "Match",
+                "Home Win", "H Fair", "H Mkt", "H Edge",
+                "Draw",     "D Fair", "D Mkt", "D Edge",
+                "Away Win", "A Fair", "A Mkt", "A Edge",
+            ]
+            s2 = bet_df[x12_cols].style
+            styled_x12 = s2.map(_green_if_value, subset=["H Edge", "D Edge", "A Edge"]) \
+                         if hasattr(s2, "map") \
+                         else s2.applymap(_green_if_value, subset=["H Edge", "D Edge", "A Edge"])
+            st.dataframe(styled_x12, width="stretch", hide_index=True)
     else:
-        st.info("No strong value bets found in upcoming matches. Check back closer to match day for live odds analysis.")
-    
-    st.caption("⚠️ Odds are estimates based on model probabilities. Always verify current odds before betting.")
+        st.info("Bet assessment will appear once upcoming fixture data is loaded.")
+
+    st.caption(
+        "⚠️ Benchmarks are proxies, not live sportsbook prices.  "
+        "O/U edge uses a fixed 1.91 line; 1X2 edge uses a 5 % overround model.  "
+        "Always verify current odds before placing bets."
+    )
 
     # ── Tournament favorites (Elo chart) ─────────────────────────────────────
     st.divider()

@@ -26,6 +26,7 @@ from goallineiq_utils.api_client import (  # noqa: E402
     get_current_standings,
     get_historical_top_scorers,
     get_upcoming_matches,
+    odds_client,
 )
 
 WINDOW_START = date(2026, 6, 4)
@@ -66,6 +67,20 @@ def build_snapshot(output_dir: Path) -> dict[str, Any]:
         "standings": write_dataframe(standings, snapshot_dir / "standings.csv"),
         "top_scorers": write_dataframe(scorers, snapshot_dir / "top_scorers.csv"),
     }
+
+    # ── Odds snapshot (1 API call per day; stores all events in one file) ─────
+    # Only fetch if ODDS_API_KEY is set and today's snapshot doesn't exist yet.
+    odds_path = snapshot_dir / "odds.json"
+    odds_count = 0
+    if not odds_path.exists():
+        odds_count = odds_client.fetch_and_save_snapshot()
+    else:
+        import json as _json
+        try:
+            odds_count = len(_json.loads(odds_path.read_text(encoding="utf-8")))
+        except Exception:
+            odds_count = -1
+    counts["odds"] = odds_count
 
     manifest = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),

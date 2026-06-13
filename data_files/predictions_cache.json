@@ -1,0 +1,2819 @@
+{
+  "generated_at": "2026-06-13T01:31:04.156924+00:00",
+  "match_predictions": [
+    {
+      "home_team": "Sweden",
+      "away_team": "Tunisia",
+      "date": "2026-06-14",
+      "round": "Matchday 4",
+      "venue": "Monterrey (Guadalupe)",
+      "city": "Monterrey (Guadalupe)",
+      "home_win": 0.7132,
+      "draw": 0.1807,
+      "away_win": 0.1061,
+      "home_xg": 2.181,
+      "away_xg": 0.703,
+      "xg_total": 2.884,
+      "home_elo": 2086,
+      "away_elo": 1890,
+      "ou_over_2_5": 0.5503,
+      "ou_under_2_5": 0.4497,
+      "ou_over_1_5": 0.7828,
+      "ou_over_3_5": 0.3268,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.1329768526515616
+        ],
+        [
+          "1-0",
+          0.12194117620500834
+        ],
+        [
+          "3-0",
+          0.09667417187768529
+        ],
+        [
+          "2-1",
+          0.0934827274140478
+        ],
+        [
+          "1-1",
+          0.08572464687212088
+        ]
+      ],
+      "fair_h": 1.4,
+      "fair_d": 5.53,
+      "fair_a": 9.43,
+      "mkt_h_odds": 1.91,
+      "mkt_d_odds": 3.55,
+      "mkt_a_odds": 4.5,
+      "h_edge": 0.1896,
+      "d_edge": -0.101,
+      "a_edge": -0.1161,
+      "ou_over_edge": 0.1019,
+      "ou_under_edge": -0.142,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Ivory Coast",
+      "away_team": "Ecuador",
+      "date": "2026-06-14",
+      "round": "Matchday 4",
+      "venue": "Philadelphia",
+      "city": "Philadelphia",
+      "home_win": 0.0179,
+      "draw": 0.084,
+      "away_win": 0.8981,
+      "home_xg": 0.25,
+      "away_xg": 2.84,
+      "xg_total": 3.09,
+      "home_elo": 1825,
+      "away_elo": 2305,
+      "ou_over_2_5": 0.5965,
+      "ou_under_2_5": 0.4035,
+      "ou_over_1_5": 0.8137,
+      "ou_over_3_5": 0.3727,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.18350028172295788
+        ],
+        [
+          "0-3",
+          0.17371360003106684
+        ],
+        [
+          "0-1",
+          0.12922555050912526
+        ],
+        [
+          "0-4",
+          0.1233366560220574
+        ],
+        [
+          "0-5",
+          0.0700552206205286
+        ]
+      ],
+      "fair_h": 55.87,
+      "fair_d": 11.9,
+      "fair_a": 1.11,
+      "mkt_h_odds": 3.6,
+      "mkt_d_odds": 2.85,
+      "mkt_a_odds": 2.45,
+      "h_edge": -0.2599,
+      "d_edge": -0.2669,
+      "a_edge": 0.4899,
+      "ou_over_edge": 0.0729,
+      "ou_under_edge": -0.1201,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Netherlands",
+      "away_team": "Japan",
+      "date": "2026-06-14",
+      "round": "Matchday 4",
+      "venue": "Dallas (Arlington)",
+      "city": "Dallas (Arlington)",
+      "home_win": 0.3105,
+      "draw": 0.2205,
+      "away_win": 0.469,
+      "home_xg": 1.533,
+      "away_xg": 1.919,
+      "xg_total": 3.452,
+      "home_elo": 2292,
+      "away_elo": 2331,
+      "ou_over_2_5": 0.6702,
+      "ou_under_2_5": 0.3298,
+      "ou_over_1_5": 0.8589,
+      "ou_over_3_5": 0.453,
+      "top_scorelines": [
+        [
+          "1-1",
+          0.0932035765446066
+        ],
+        [
+          "1-2",
+          0.08942883169455003
+        ],
+        [
+          "2-1",
+          0.07144054142144098
+        ],
+        [
+          "2-2",
+          0.0685471994938726
+        ],
+        [
+          "0-1",
+          0.06079815821565988
+        ]
+      ],
+      "fair_h": 3.22,
+      "fair_d": 4.54,
+      "fair_a": 2.13,
+      "mkt_h_odds": 2.0,
+      "mkt_d_odds": 3.6,
+      "mkt_a_odds": 3.8,
+      "h_edge": -0.1895,
+      "d_edge": -0.0573,
+      "a_edge": 0.2058,
+      "ou_over_edge": 0.1466,
+      "ou_under_edge": -0.1938,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Germany",
+      "away_team": "Cura\u00e7ao",
+      "date": "2026-06-14",
+      "round": "Matchday 4",
+      "venue": "Houston",
+      "city": "Houston",
+      "home_win": 0.9029,
+      "draw": 0.0802,
+      "away_win": 0.017,
+      "home_xg": 2.898,
+      "away_xg": 0.25,
+      "xg_total": 3.148,
+      "home_elo": 2377,
+      "away_elo": 1672,
+      "ou_over_2_5": 0.6089,
+      "ou_under_2_5": 0.3911,
+      "ou_over_1_5": 0.8217,
+      "ou_over_3_5": 0.3857,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.18030498644753748
+        ],
+        [
+          "3-0",
+          0.1741746169083212
+        ],
+        [
+          "4-0",
+          0.12618950995007872
+        ],
+        [
+          "1-0",
+          0.12443408312459456
+        ],
+        [
+          "5-0",
+          0.07313943996706565
+        ]
+      ],
+      "fair_h": 1.11,
+      "fair_d": 12.47,
+      "fair_a": 58.82,
+      "mkt_h_odds": 1.06,
+      "mkt_d_odds": 20.0,
+      "mkt_a_odds": 41.0,
+      "h_edge": -0.0405,
+      "d_edge": 0.0302,
+      "a_edge": -0.0074,
+      "ou_over_edge": 0.0853,
+      "ou_under_edge": -0.1325,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Saudi Arabia",
+      "away_team": "Uruguay",
+      "date": "2026-06-15",
+      "round": "Matchday 5",
+      "venue": "Miami (Miami Gardens)",
+      "city": "Miami (Miami Gardens)",
+      "home_win": 0.0505,
+      "draw": 0.1345,
+      "away_win": 0.815,
+      "home_xg": 0.452,
+      "away_xg": 2.453,
+      "xg_total": 2.905,
+      "home_elo": 1853,
+      "away_elo": 2147,
+      "ou_over_2_5": 0.5551,
+      "ou_under_2_5": 0.4449,
+      "ou_over_1_5": 0.7862,
+      "ou_over_3_5": 0.3314,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.16471745777320138
+        ],
+        [
+          "0-3",
+          0.13468397463922097
+        ],
+        [
+          "0-1",
+          0.1342987833454557
+        ],
+        [
+          "0-4",
+          0.08259494744750225
+        ],
+        [
+          "1-2",
+          0.07445229091348703
+        ]
+      ],
+      "fair_h": 19.8,
+      "fair_d": 7.43,
+      "fair_a": 1.23,
+      "mkt_h_odds": 8.5,
+      "mkt_d_odds": 4.6,
+      "mkt_a_odds": 1.44,
+      "h_edge": -0.0671,
+      "d_edge": -0.0829,
+      "a_edge": 0.1206,
+      "ou_over_edge": 0.0551,
+      "ou_under_edge": -0.087,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Spain",
+      "away_team": "Cape Verde",
+      "date": "2026-06-15",
+      "round": "Matchday 5",
+      "venue": "Atlanta",
+      "city": "Atlanta",
+      "home_win": 0.9224,
+      "draw": 0.0643,
+      "away_win": 0.0133,
+      "home_xg": 3.17,
+      "away_xg": 0.25,
+      "xg_total": 3.42,
+      "home_elo": 2539,
+      "away_elo": 1820,
+      "ou_over_2_5": 0.6636,
+      "ou_under_2_5": 0.3364,
+      "ou_over_1_5": 0.855,
+      "ou_over_3_5": 0.4455,
+      "top_scorelines": [
+        [
+          "3-0",
+          0.17367584004068834
+        ],
+        [
+          "2-0",
+          0.16436199372935809
+        ],
+        [
+          "4-0",
+          0.1376381032322455
+        ],
+        [
+          "1-0",
+          0.10369841875669283
+        ],
+        [
+          "5-0",
+          0.08726255744924369
+        ]
+      ],
+      "fair_h": 1.08,
+      "fair_d": 15.55,
+      "fair_a": 75.19,
+      "mkt_h_odds": 1.1,
+      "mkt_d_odds": 12.0,
+      "mkt_a_odds": 28.0,
+      "h_edge": 0.0133,
+      "d_edge": -0.019,
+      "a_edge": -0.0224,
+      "ou_over_edge": 0.14,
+      "ou_under_edge": -0.1872,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Iran",
+      "away_team": "New Zealand",
+      "date": "2026-06-15",
+      "round": "Matchday 5",
+      "venue": "Los Angeles (Inglewood)",
+      "city": "Los Angeles (Inglewood)",
+      "home_win": 0.8248,
+      "draw": 0.1321,
+      "away_win": 0.0431,
+      "home_xg": 2.413,
+      "away_xg": 0.385,
+      "xg_total": 2.798,
+      "home_elo": 2099,
+      "away_elo": 1780,
+      "ou_over_2_5": 0.53,
+      "ou_under_2_5": 0.47,
+      "ou_over_1_5": 0.7685,
+      "ou_over_3_5": 0.3076,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.17738981785730684
+        ],
+        [
+          "1-0",
+          0.14702844414198663
+        ],
+        [
+          "3-0",
+          0.14268054349656048
+        ],
+        [
+          "4-0",
+          0.08607203786430008
+        ],
+        [
+          "2-1",
+          0.06829507987506311
+        ]
+      ],
+      "fair_h": 1.21,
+      "fair_d": 7.57,
+      "fair_a": 23.2,
+      "mkt_h_odds": 1.83,
+      "mkt_d_odds": 3.5,
+      "mkt_a_odds": 4.8,
+      "h_edge": 0.2784,
+      "d_edge": -0.1536,
+      "a_edge": -0.1652,
+      "ou_over_edge": 0.1133,
+      "ou_under_edge": -0.1511,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Belgium",
+      "away_team": "Egypt",
+      "date": "2026-06-15",
+      "round": "Matchday 5",
+      "venue": "Seattle",
+      "city": "Seattle",
+      "home_win": 0.7773,
+      "draw": 0.1438,
+      "away_win": 0.0789,
+      "home_xg": 2.572,
+      "away_xg": 0.699,
+      "xg_total": 3.271,
+      "home_elo": 2321,
+      "away_elo": 2094,
+      "ou_over_2_5": 0.6346,
+      "ou_under_2_5": 0.3654,
+      "ou_over_1_5": 0.8378,
+      "ou_over_3_5": 0.4132,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.12558410722221824
+        ],
+        [
+          "3-0",
+          0.10766744125851507
+        ],
+        [
+          "1-0",
+          0.0976548267668882
+        ],
+        [
+          "2-1",
+          0.08778329094833053
+        ],
+        [
+          "3-1",
+          0.07525954143970202
+        ]
+      ],
+      "fair_h": 1.29,
+      "fair_d": 6.95,
+      "fair_a": 12.67,
+      "mkt_h_odds": 1.61,
+      "mkt_d_odds": 3.95,
+      "mkt_a_odds": 5.9,
+      "h_edge": 0.1562,
+      "d_edge": -0.1094,
+      "a_edge": -0.0906,
+      "ou_over_edge": 0.1295,
+      "ou_under_edge": -0.1751,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Austria",
+      "away_team": "Jordan",
+      "date": "2026-06-16",
+      "round": "Matchday 6",
+      "venue": "San Francisco Bay Area (Santa Clara)",
+      "city": "San Francisco Bay Area (Santa Clara)",
+      "home_win": 0.7853,
+      "draw": 0.1454,
+      "away_win": 0.0693,
+      "home_xg": 2.46,
+      "away_xg": 0.589,
+      "xg_total": 3.049,
+      "home_elo": 2206,
+      "away_elo": 1957,
+      "ou_over_2_5": 0.5876,
+      "ou_under_2_5": 0.4124,
+      "ou_over_1_5": 0.808,
+      "ou_over_3_5": 0.3637,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.14344200372934274
+        ],
+        [
+          "3-0",
+          0.11762244305806101
+        ],
+        [
+          "1-0",
+          0.11661951522710791
+        ],
+        [
+          "2-1",
+          0.08448734019658288
+        ],
+        [
+          "4-0",
+          0.07233780248070752
+        ]
+      ],
+      "fair_h": 1.27,
+      "fair_d": 6.88,
+      "fair_a": 14.43,
+      "mkt_h_odds": 1.34,
+      "mkt_d_odds": 5.6,
+      "mkt_a_odds": 10.0,
+      "h_edge": 0.039,
+      "d_edge": -0.0332,
+      "a_edge": -0.0307,
+      "ou_over_edge": -0.0185,
+      "ou_under_edge": -0.0186,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Argentina",
+      "away_team": "Algeria",
+      "date": "2026-06-16",
+      "round": "Matchday 6",
+      "venue": "Kansas City",
+      "city": "Kansas City",
+      "home_win": 0.7496,
+      "draw": 0.1513,
+      "away_win": 0.0991,
+      "home_xg": 2.603,
+      "away_xg": 0.849,
+      "xg_total": 3.452,
+      "home_elo": 2408,
+      "away_elo": 2214,
+      "ou_over_2_5": 0.6701,
+      "ou_under_2_5": 0.3299,
+      "ou_over_1_5": 0.8589,
+      "ou_over_3_5": 0.4529,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.1073331287101222
+        ],
+        [
+          "3-0",
+          0.09312937801081601
+        ],
+        [
+          "2-1",
+          0.09112582627489374
+        ],
+        [
+          "1-0",
+          0.08246878886678616
+        ],
+        [
+          "3-1",
+          0.0790668419311828
+        ]
+      ],
+      "fair_h": 1.33,
+      "fair_d": 6.61,
+      "fair_a": 10.09,
+      "mkt_h_odds": 1.41,
+      "mkt_d_odds": 4.75,
+      "mkt_a_odds": 9.5,
+      "h_edge": 0.0404,
+      "d_edge": -0.0592,
+      "a_edge": -0.0062,
+      "ou_over_edge": 0.1573,
+      "ou_under_edge": -0.1937,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "France",
+      "away_team": "Senegal",
+      "date": "2026-06-16",
+      "round": "Matchday 6",
+      "venue": "New York/New Jersey (East Rutherford)",
+      "city": "New York/New Jersey (East Rutherford)",
+      "home_win": 0.8548,
+      "draw": 0.1049,
+      "away_win": 0.0403,
+      "home_xg": 2.853,
+      "away_xg": 0.49,
+      "xg_total": 3.343,
+      "home_elo": 2402,
+      "away_elo": 2096,
+      "ou_over_2_5": 0.6489,
+      "ou_under_2_5": 0.3511,
+      "ou_over_1_5": 0.8464,
+      "ou_over_3_5": 0.4289,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.14378947387986163
+        ],
+        [
+          "3-0",
+          0.13674378965974843
+        ],
+        [
+          "1-0",
+          0.10079878996134707
+        ],
+        [
+          "4-0",
+          0.09753250797481557
+        ],
+        [
+          "2-1",
+          0.07045684220113219
+        ]
+      ],
+      "fair_h": 1.17,
+      "fair_d": 9.53,
+      "fair_a": 24.81,
+      "mkt_h_odds": 1.48,
+      "mkt_d_odds": 4.4,
+      "mkt_a_odds": 7.5,
+      "h_edge": 0.1791,
+      "d_edge": -0.1224,
+      "a_edge": -0.093,
+      "ou_over_edge": 0.1361,
+      "ou_under_edge": -0.1725,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Iraq",
+      "away_team": "Norway",
+      "date": "2026-06-16",
+      "round": "Matchday 6",
+      "venue": "Boston (Foxborough)",
+      "city": "Boston (Foxborough)",
+      "home_win": 0.0171,
+      "draw": 0.0808,
+      "away_win": 0.9021,
+      "home_xg": 0.25,
+      "away_xg": 2.888,
+      "xg_total": 3.138,
+      "home_elo": 1895,
+      "away_elo": 2340,
+      "ou_over_2_5": 0.6068,
+      "ou_under_2_5": 0.3932,
+      "ou_over_1_5": 0.8203,
+      "ou_over_3_5": 0.3834,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.18086240349544033
+        ],
+        [
+          "0-3",
+          0.1741102070982772
+        ],
+        [
+          "0-4",
+          0.12570756952495613
+        ],
+        [
+          "0-1",
+          0.12525097194975096
+        ],
+        [
+          "0-5",
+          0.07260869215761469
+        ]
+      ],
+      "fair_h": 58.48,
+      "fair_d": 12.38,
+      "fair_a": 1.11,
+      "mkt_h_odds": 16.0,
+      "mkt_d_odds": 7.0,
+      "mkt_a_odds": 1.21,
+      "h_edge": -0.0454,
+      "d_edge": -0.0621,
+      "a_edge": 0.0757,
+      "ou_over_edge": -0.0143,
+      "ou_under_edge": -0.0235,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "England",
+      "away_team": "Croatia",
+      "date": "2026-06-17",
+      "round": "Matchday 7",
+      "venue": "Dallas (Arlington)",
+      "city": "Dallas (Arlington)",
+      "home_win": 0.6097,
+      "draw": 0.1981,
+      "away_win": 0.1921,
+      "home_xg": 2.212,
+      "away_xg": 1.17,
+      "xg_total": 3.382,
+      "home_elo": 2326,
+      "away_elo": 2216,
+      "ou_over_2_5": 0.6568,
+      "ou_under_2_5": 0.3432,
+      "ou_over_1_5": 0.8511,
+      "ou_over_3_5": 0.4377,
+      "top_scorelines": [
+        [
+          "2-1",
+          0.09726177107952529
+        ],
+        [
+          "1-1",
+          0.08794011851674981
+        ],
+        [
+          "2-0",
+          0.08312971887138913
+        ],
+        [
+          "1-0",
+          0.07516249445876053
+        ],
+        [
+          "3-1",
+          0.07171434587597
+        ]
+      ],
+      "fair_h": 1.64,
+      "fair_d": 5.05,
+      "fair_a": 5.21,
+      "mkt_h_odds": 1.74,
+      "mkt_d_odds": 3.85,
+      "mkt_a_odds": 5.1,
+      "h_edge": 0.035,
+      "d_edge": -0.0616,
+      "a_edge": -0.004,
+      "ou_over_edge": 0.1917,
+      "ou_under_edge": -0.2315,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Uzbekistan",
+      "away_team": "Colombia",
+      "date": "2026-06-17",
+      "round": "Matchday 7",
+      "venue": "Mexico City",
+      "city": "Mexico City",
+      "home_win": 0.0509,
+      "draw": 0.1237,
+      "away_win": 0.8254,
+      "home_xg": 0.514,
+      "away_xg": 2.637,
+      "xg_total": 3.151,
+      "home_elo": 1998,
+      "away_elo": 2282,
+      "ou_over_2_5": 0.6097,
+      "ou_under_2_5": 0.3903,
+      "ou_over_1_5": 0.8222,
+      "ou_over_3_5": 0.3865,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.1488429782714716
+        ],
+        [
+          "0-3",
+          0.13083297790062354
+        ],
+        [
+          "0-1",
+          0.11288811397153702
+        ],
+        [
+          "0-4",
+          0.08625164068098604
+        ],
+        [
+          "1-2",
+          0.0765052908315364
+        ]
+      ],
+      "fair_h": 19.65,
+      "fair_d": 8.08,
+      "fair_a": 1.21,
+      "mkt_h_odds": 9.5,
+      "mkt_d_odds": 4.75,
+      "mkt_a_odds": 1.4,
+      "h_edge": -0.0544,
+      "d_edge": -0.0868,
+      "a_edge": 0.1111,
+      "ou_over_edge": 0.1046,
+      "ou_under_edge": -0.1445,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Ghana",
+      "away_team": "Panama",
+      "date": "2026-06-17",
+      "round": "Matchday 7",
+      "venue": "Toronto",
+      "city": "Toronto",
+      "home_win": 0.1157,
+      "draw": 0.1971,
+      "away_win": 0.6873,
+      "home_xg": 0.682,
+      "away_xg": 2.016,
+      "xg_total": 2.698,
+      "home_elo": 1789,
+      "away_elo": 1977,
+      "ou_over_2_5": 0.5059,
+      "ou_under_2_5": 0.4941,
+      "ou_over_1_5": 0.751,
+      "ou_over_3_5": 0.2855,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.1368436179237809
+        ],
+        [
+          "0-1",
+          0.13575755746406834
+        ],
+        [
+          "1-2",
+          0.09332734742401859
+        ],
+        [
+          "1-1",
+          0.09258665419049462
+        ],
+        [
+          "0-3",
+          0.09195891124478077
+        ]
+      ],
+      "fair_h": 8.64,
+      "fair_d": 5.07,
+      "fair_a": 1.45,
+      "mkt_h_odds": 2.2,
+      "mkt_d_odds": 3.4,
+      "mkt_a_odds": 3.5,
+      "h_edge": -0.3388,
+      "d_edge": -0.097,
+      "a_edge": 0.4016,
+      "ou_over_edge": 0.0711,
+      "ou_under_edge": -0.112,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Portugal",
+      "away_team": "DR Congo",
+      "date": "2026-06-17",
+      "round": "Matchday 7",
+      "venue": "Houston",
+      "city": "Houston",
+      "home_win": 0.8968,
+      "draw": 0.0833,
+      "away_win": 0.0199,
+      "home_xg": 2.903,
+      "away_xg": 0.287,
+      "xg_total": 3.19,
+      "home_elo": 2363,
+      "away_elo": 1961,
+      "ou_over_2_5": 0.6178,
+      "ou_under_2_5": 0.3822,
+      "ou_over_1_5": 0.8273,
+      "ou_over_3_5": 0.395,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.1734860978493689
+        ],
+        [
+          "3-0",
+          0.167876714018906
+        ],
+        [
+          "4-0",
+          0.12183652519922097
+        ],
+        [
+          "1-0",
+          0.11952194133611362
+        ],
+        [
+          "5-0",
+          0.0707382865306677
+        ]
+      ],
+      "fair_h": 1.12,
+      "fair_d": 12.0,
+      "fair_a": 50.25,
+      "mkt_h_odds": 1.29,
+      "mkt_d_odds": 5.75,
+      "mkt_a_odds": 11.0,
+      "h_edge": 0.1216,
+      "d_edge": -0.0906,
+      "a_edge": -0.071,
+      "ou_over_edge": 0.0261,
+      "ou_under_edge": -0.0723,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Czech Republic",
+      "away_team": "South Africa",
+      "date": "2026-06-18",
+      "round": "Matchday 8",
+      "venue": "Atlanta",
+      "city": "Atlanta",
+      "home_win": 0.2938,
+      "draw": 0.2621,
+      "away_win": 0.4441,
+      "home_xg": 1.121,
+      "away_xg": 1.441,
+      "xg_total": 2.562,
+      "home_elo": 1784,
+      "away_elo": 1827,
+      "ou_over_2_5": 0.472,
+      "ou_under_2_5": 0.528,
+      "ou_over_1_5": 0.7252,
+      "ou_over_3_5": 0.2558,
+      "top_scorelines": [
+        [
+          "1-1",
+          0.12462556228528344
+        ],
+        [
+          "0-1",
+          0.11117356136064535
+        ],
+        [
+          "1-2",
+          0.08979271762654674
+        ],
+        [
+          "1-0",
+          0.08648547001060615
+        ],
+        [
+          "0-2",
+          0.08010055096034498
+        ]
+      ],
+      "fair_h": 3.4,
+      "fair_d": 3.82,
+      "fair_a": 2.25,
+      "mkt_h_odds": 1.74,
+      "mkt_d_odds": 3.85,
+      "mkt_a_odds": 5.0,
+      "h_edge": -0.2809,
+      "d_edge": 0.0024,
+      "a_edge": 0.2441,
+      "ou_over_edge": -0.0042,
+      "ou_under_edge": -0.0467,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Canada",
+      "away_team": "Qatar",
+      "date": "2026-06-18",
+      "round": "Matchday 8",
+      "venue": "Vancouver",
+      "city": "Vancouver",
+      "home_win": 0.8769,
+      "draw": 0.1012,
+      "away_win": 0.0219,
+      "home_xg": 2.61,
+      "away_xg": 0.25,
+      "xg_total": 2.86,
+      "home_elo": 2169,
+      "away_elo": 1624,
+      "ou_over_2_5": 0.5446,
+      "ou_under_2_5": 0.4554,
+      "ou_over_1_5": 0.7789,
+      "ou_over_3_5": 0.3213,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.1950602609021951
+        ],
+        [
+          "3-0",
+          0.16970242698490975
+        ],
+        [
+          "1-0",
+          0.14947146429286978
+        ],
+        [
+          "4-0",
+          0.11073083360765358
+        ],
+        [
+          "5-0",
+          0.0578014951431952
+        ]
+      ],
+      "fair_h": 1.14,
+      "fair_d": 9.88,
+      "fair_a": 45.66,
+      "mkt_h_odds": 1.3,
+      "mkt_d_odds": 5.6,
+      "mkt_a_odds": 11.5,
+      "h_edge": 0.1077,
+      "d_edge": -0.0774,
+      "a_edge": -0.0651,
+      "ou_over_edge": 0.0098,
+      "ou_under_edge": -0.0765,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Mexico",
+      "away_team": "South Korea",
+      "date": "2026-06-18",
+      "round": "Matchday 8",
+      "venue": "Guadalajara (Zapopan)",
+      "city": "Guadalajara (Zapopan)",
+      "home_win": 0.8017,
+      "draw": 0.1349,
+      "away_win": 0.0634,
+      "home_xg": 2.58,
+      "away_xg": 0.591,
+      "xg_total": 3.171,
+      "home_elo": 2279,
+      "away_elo": 2023,
+      "ou_over_2_5": 0.6139,
+      "ou_under_2_5": 0.3861,
+      "ou_over_1_5": 0.8249,
+      "ou_over_3_5": 0.3909,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.13965664804259895
+        ],
+        [
+          "3-0",
+          0.1201047173166351
+        ],
+        [
+          "1-0",
+          0.10826096747488287
+        ],
+        [
+          "2-1",
+          0.08253707899317597
+        ],
+        [
+          "4-0",
+          0.07746754266922962
+        ]
+      ],
+      "fair_h": 1.25,
+      "fair_d": 7.41,
+      "fair_a": 15.77,
+      "mkt_h_odds": 2.0,
+      "mkt_d_odds": 3.45,
+      "mkt_a_odds": 4.0,
+      "h_edge": 0.3017,
+      "d_edge": -0.155,
+      "a_edge": -0.1866,
+      "ou_over_edge": 0.2057,
+      "ou_under_edge": -0.235,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Switzerland",
+      "away_team": "Bosnia & Herzegovina",
+      "date": "2026-06-18",
+      "round": "Matchday 8",
+      "venue": "Los Angeles (Inglewood)",
+      "city": "Los Angeles (Inglewood)",
+      "home_win": 0.8932,
+      "draw": 0.088,
+      "away_win": 0.0188,
+      "home_xg": 2.783,
+      "away_xg": 0.25,
+      "xg_total": 3.033,
+      "home_elo": 2276,
+      "away_elo": 1834,
+      "ou_over_2_5": 0.584,
+      "ou_under_2_5": 0.416,
+      "ou_over_1_5": 0.8056,
+      "ou_over_3_5": 0.36,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.18654398644175196
+        ],
+        [
+          "3-0",
+          0.17305063808913193
+        ],
+        [
+          "1-0",
+          0.13405963811839883
+        ],
+        [
+          "4-0",
+          0.1203999814505135
+        ],
+        [
+          "5-0",
+          0.06701462967535587
+        ]
+      ],
+      "fair_h": 1.12,
+      "fair_d": 11.36,
+      "fair_a": 53.19,
+      "mkt_h_odds": 1.61,
+      "mkt_d_odds": 4.2,
+      "mkt_a_odds": 6.1,
+      "h_edge": 0.2721,
+      "d_edge": -0.1501,
+      "a_edge": -0.1451,
+      "ou_over_edge": 0.0789,
+      "ou_under_edge": -0.1427,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Brazil",
+      "away_team": "Haiti",
+      "date": "2026-06-19",
+      "round": "Matchday 9",
+      "venue": "Philadelphia",
+      "city": "Philadelphia",
+      "home_win": 0.9052,
+      "draw": 0.0782,
+      "away_win": 0.0165,
+      "home_xg": 2.928,
+      "away_xg": 0.25,
+      "xg_total": 3.178,
+      "home_elo": 2358,
+      "away_elo": 1818,
+      "ou_over_2_5": 0.6152,
+      "ou_under_2_5": 0.3848,
+      "ou_over_1_5": 0.8257,
+      "ou_over_3_5": 0.3923,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.17861761478956723
+        ],
+        [
+          "3-0",
+          0.1743307920346176
+        ],
+        [
+          "4-0",
+          0.12761013976934008
+        ],
+        [
+          "1-0",
+          0.12200656747921261
+        ],
+        [
+          "5-0",
+          0.07472849784892559
+        ]
+      ],
+      "fair_h": 1.1,
+      "fair_d": 12.79,
+      "fair_a": 60.61,
+      "mkt_h_odds": 1.08,
+      "mkt_d_odds": 14.0,
+      "mkt_a_odds": 34.0,
+      "h_edge": -0.0207,
+      "d_edge": 0.0068,
+      "a_edge": -0.0129,
+      "ou_over_edge": 0.0916,
+      "ou_under_edge": -0.1388,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "USA",
+      "away_team": "Australia",
+      "date": "2026-06-19",
+      "round": "Matchday 9",
+      "venue": "Seattle",
+      "city": "Seattle",
+      "home_win": 0.5491,
+      "draw": 0.2206,
+      "away_win": 0.2303,
+      "home_xg": 1.934,
+      "away_xg": 1.181,
+      "xg_total": 3.115,
+      "home_elo": 2162,
+      "away_elo": 2077,
+      "ou_over_2_5": 0.6021,
+      "ou_under_2_5": 0.3979,
+      "ou_over_1_5": 0.8174,
+      "ou_over_3_5": 0.3785,
+      "top_scorelines": [
+        [
+          "1-1",
+          0.10136290676425008
+        ],
+        [
+          "2-1",
+          0.09801793084102983
+        ],
+        [
+          "1-0",
+          0.08582803282324307
+        ],
+        [
+          "2-0",
+          0.08299570774007606
+        ],
+        [
+          "3-1",
+          0.06318889274885056
+        ]
+      ],
+      "fair_h": 1.82,
+      "fair_d": 4.53,
+      "fair_a": 4.34,
+      "mkt_h_odds": 1.79,
+      "mkt_d_odds": 3.95,
+      "mkt_a_odds": 4.9,
+      "h_edge": -0.0096,
+      "d_edge": -0.0326,
+      "a_edge": 0.0262,
+      "ou_over_edge": 0.1119,
+      "ou_under_edge": -0.1768,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Scotland",
+      "away_team": "Morocco",
+      "date": "2026-06-19",
+      "round": "Matchday 9",
+      "venue": "Boston (Foxborough)",
+      "city": "Boston (Foxborough)",
+      "home_win": 0.0767,
+      "draw": 0.1408,
+      "away_win": 0.7826,
+      "home_xg": 0.697,
+      "away_xg": 2.606,
+      "xg_total": 3.303,
+      "home_elo": 2112,
+      "away_elo": 2341,
+      "ou_over_2_5": 0.6411,
+      "ou_under_2_5": 0.3589,
+      "ou_over_1_5": 0.8417,
+      "ou_over_3_5": 0.4202,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.12486598670528912
+        ],
+        [
+          "0-3",
+          0.10846692045132782
+        ],
+        [
+          "0-1",
+          0.09582961374158798
+        ],
+        [
+          "1-2",
+          0.0870315927335865
+        ],
+        [
+          "1-3",
+          0.07560144355457549
+        ]
+      ],
+      "fair_h": 13.04,
+      "fair_d": 7.1,
+      "fair_a": 1.28,
+      "mkt_h_odds": 4.35,
+      "mkt_d_odds": 3.35,
+      "mkt_a_odds": 2.0,
+      "h_edge": -0.1532,
+      "d_edge": -0.1577,
+      "a_edge": 0.2826,
+      "ou_over_edge": 0.1967,
+      "ou_under_edge": -0.2584,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Turkey",
+      "away_team": "Paraguay",
+      "date": "2026-06-19",
+      "round": "Matchday 9",
+      "venue": "San Francisco Bay Area (Santa Clara)",
+      "city": "San Francisco Bay Area (Santa Clara)",
+      "home_win": 0.7181,
+      "draw": 0.1661,
+      "away_win": 0.1158,
+      "home_xg": 2.45,
+      "away_xg": 0.882,
+      "xg_total": 3.332,
+      "home_elo": 2331,
+      "away_elo": 2154,
+      "ou_over_2_5": 0.6469,
+      "ou_under_2_5": 0.3531,
+      "ou_over_1_5": 0.8452,
+      "ou_over_3_5": 0.4267,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.10720942317608456
+        ],
+        [
+          "2-1",
+          0.09455871124130659
+        ],
+        [
+          "3-0",
+          0.08755436226046907
+        ],
+        [
+          "1-0",
+          0.0875178964702731
+        ],
+        [
+          "3-1",
+          0.07722294751373374
+        ]
+      ],
+      "fair_h": 1.39,
+      "fair_d": 6.02,
+      "fair_a": 8.64,
+      "mkt_h_odds": 2.25,
+      "mkt_d_odds": 3.2,
+      "mkt_a_odds": 3.45,
+      "h_edge": 0.2737,
+      "d_edge": -0.1464,
+      "a_edge": -0.1741,
+      "ou_over_edge": 0.2025,
+      "ou_under_edge": -0.268,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Germany",
+      "away_team": "Ivory Coast",
+      "date": "2026-06-20",
+      "round": "Matchday 10",
+      "venue": "Toronto",
+      "city": "Toronto",
+      "home_win": 0.9077,
+      "draw": 0.0762,
+      "away_win": 0.0161,
+      "home_xg": 2.96,
+      "away_xg": 0.25,
+      "xg_total": 3.21,
+      "home_elo": 2377,
+      "away_elo": 1825,
+      "ou_over_2_5": 0.6219,
+      "ou_under_2_5": 0.3781,
+      "ou_over_1_5": 0.8298,
+      "ou_over_3_5": 0.3994,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.17679425142211402
+        ],
+        [
+          "3-0",
+          0.17443699473648583
+        ],
+        [
+          "4-0",
+          0.1290833761049995
+        ],
+        [
+          "1-0",
+          0.1194555752852122
+        ],
+        [
+          "5-0",
+          0.07641735865415974
+        ]
+      ],
+      "fair_h": 1.1,
+      "fair_d": 13.12,
+      "fair_a": 62.11,
+      "mkt_h_odds": 1.56,
+      "mkt_d_odds": 4.4,
+      "mkt_a_odds": 6.25,
+      "h_edge": 0.2667,
+      "d_edge": -0.1511,
+      "a_edge": -0.1439,
+      "ou_over_edge": 0.0632,
+      "ou_under_edge": -0.127,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Ecuador",
+      "away_team": "Cura\u00e7ao",
+      "date": "2026-06-20",
+      "round": "Matchday 10",
+      "venue": "Kansas City",
+      "city": "Kansas City",
+      "home_win": 0.8956,
+      "draw": 0.086,
+      "away_win": 0.0183,
+      "home_xg": 2.811,
+      "away_xg": 0.25,
+      "xg_total": 3.061,
+      "home_elo": 2305,
+      "away_elo": 1672,
+      "ou_over_2_5": 0.5902,
+      "ou_under_2_5": 0.4098,
+      "ou_over_1_5": 0.8096,
+      "ou_over_3_5": 0.3663,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.18506158883021537
+        ],
+        [
+          "3-0",
+          0.1734027087339118
+        ],
+        [
+          "1-0",
+          0.13166957583081848
+        ],
+        [
+          "4-0",
+          0.12185875356275651
+        ],
+        [
+          "5-0",
+          0.0685089912529817
+        ]
+      ],
+      "fair_h": 1.12,
+      "fair_d": 11.63,
+      "fair_a": 54.64,
+      "mkt_h_odds": 1.21,
+      "mkt_d_odds": 7.5,
+      "mkt_a_odds": 15.0,
+      "h_edge": 0.0692,
+      "d_edge": -0.0473,
+      "a_edge": -0.0484,
+      "ou_over_edge": -0.0086,
+      "ou_under_edge": -0.0447,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Netherlands",
+      "away_team": "Sweden",
+      "date": "2026-06-20",
+      "round": "Matchday 10",
+      "venue": "Houston",
+      "city": "Houston",
+      "home_win": 0.7498,
+      "draw": 0.1562,
+      "away_win": 0.094,
+      "home_xg": 2.478,
+      "away_xg": 0.76,
+      "xg_total": 3.238,
+      "home_elo": 2292,
+      "away_elo": 2086,
+      "ou_over_2_5": 0.6279,
+      "ou_under_2_5": 0.3721,
+      "ou_over_1_5": 0.8336,
+      "ou_over_3_5": 0.4059,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.12048336153341221
+        ],
+        [
+          "3-0",
+          0.09951925662659848
+        ],
+        [
+          "1-0",
+          0.0972424225451269
+        ],
+        [
+          "2-1",
+          0.09156735476539328
+        ],
+        [
+          "3-1",
+          0.07563463503621484
+        ]
+      ],
+      "fair_h": 1.33,
+      "fair_d": 6.4,
+      "fair_a": 10.64,
+      "mkt_h_odds": 1.65,
+      "mkt_d_odds": 4.2,
+      "mkt_a_odds": 5.3,
+      "h_edge": 0.1437,
+      "d_edge": -0.0819,
+      "a_edge": -0.0947,
+      "ou_over_edge": 0.096,
+      "ou_under_edge": -0.1627,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Tunisia",
+      "away_team": "Japan",
+      "date": "2026-06-20",
+      "round": "Matchday 10",
+      "venue": "Monterrey (Guadalupe)",
+      "city": "Monterrey (Guadalupe)",
+      "home_win": 0.0174,
+      "draw": 0.0819,
+      "away_win": 0.9008,
+      "home_xg": 0.25,
+      "away_xg": 2.872,
+      "xg_total": 3.122,
+      "home_elo": 1890,
+      "away_elo": 2331,
+      "ou_over_2_5": 0.6034,
+      "ou_under_2_5": 0.3966,
+      "ou_over_1_5": 0.8181,
+      "ou_over_3_5": 0.3799,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.18174877944025766
+        ],
+        [
+          "0-3",
+          0.17399416485080665
+        ],
+        [
+          "0-1",
+          0.1265660023957226
+        ],
+        [
+          "0-4",
+          0.12492781036287917
+        ],
+        [
+          "0-5",
+          0.07175853427243783
+        ]
+      ],
+      "fair_h": 57.47,
+      "fair_d": 12.21,
+      "fair_a": 1.11,
+      "mkt_h_odds": 5.4,
+      "mkt_d_odds": 3.7,
+      "mkt_a_odds": 1.71,
+      "h_edge": -0.1678,
+      "d_edge": -0.1884,
+      "a_edge": 0.316,
+      "ou_over_edge": 0.1489,
+      "ou_under_edge": -0.1986,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "New Zealand",
+      "away_team": "Egypt",
+      "date": "2026-06-21",
+      "round": "Matchday 11",
+      "venue": "Vancouver",
+      "city": "Vancouver",
+      "home_win": 0.0446,
+      "draw": 0.134,
+      "away_win": 0.8214,
+      "home_xg": 0.393,
+      "away_xg": 2.401,
+      "xg_total": 2.794,
+      "home_elo": 1780,
+      "away_elo": 2094,
+      "ou_over_2_5": 0.5291,
+      "ou_under_2_5": 0.4709,
+      "ou_over_1_5": 0.7679,
+      "ou_over_3_5": 0.3067,
+      "top_scorelines": [
+        [
+          "0-2",
+          0.17633378998616264
+        ],
+        [
+          "0-1",
+          0.1468836234786861
+        ],
+        [
+          "0-3",
+          0.14112580991892548
+        ],
+        [
+          "0-4",
+          0.084710767403835
+        ],
+        [
+          "1-2",
+          0.0692991794645619
+        ]
+      ],
+      "fair_h": 22.42,
+      "fair_d": 7.46,
+      "fair_a": 1.22,
+      "mkt_h_odds": 5.2,
+      "mkt_d_odds": 3.85,
+      "mkt_a_odds": 1.77,
+      "h_edge": -0.1477,
+      "d_edge": -0.1257,
+      "a_edge": 0.2564,
+      "ou_over_edge": 0.0683,
+      "ou_under_edge": -0.1315,
+      "odds_source": "real"
+    },
+    {
+      "home_team": "Belgium",
+      "away_team": "Iran",
+      "date": "2026-06-21",
+      "round": "Matchday 11",
+      "venue": "Los Angeles (Inglewood)",
+      "city": "Los Angeles (Inglewood)",
+      "home_win": 0.7727,
+      "draw": 0.1457,
+      "away_win": 0.0816,
+      "home_xg": 2.561,
+      "away_xg": 0.713,
+      "xg_total": 3.274,
+      "home_elo": 2321,
+      "away_elo": 2099,
+      "ou_over_2_5": 0.6352,
+      "ou_under_2_5": 0.3648,
+      "ou_over_1_5": 0.8381,
+      "ou_over_3_5": 0.4138,
+      "top_scorelines": [
+        [
+          "2-0",
+          0.12413922435974638
+        ],
+        [
+          "3-0",
+          0.1059735178617702
+        ],
+        [
+          "1-0",
+          0.09694589953904442
+        ],
+        [
+          "2-1",
+          0.08851126696849916
+        ],
+        [
+          "3-1",
+          0.07555911823544215
+        ]
+      ],
+      "fair_h": 1.29,
+      "fair_d": 6.86,
+      "fair_a": 12.25,
+      "mkt_h_odds": 1.41,
+      "mkt_d_odds": 4.8,
+      "mkt_a_odds": 8.5,
+      "h_edge": 0.0635,
+      "d_edge": -0.0626,
+      "a_edge": -0.036,
+      "ou_over_edge": 0.1033,
+      "ou_under_edge": -0.1671,
+      "odds_source": "real"
+    }
+  ],
+  "upset_watch": [
+    {
+      "date": "2026-06-14",
+      "match": "Netherlands vs Japan",
+      "favourite": "Japan",
+      "underdog": "Netherlands",
+      "elo_gap": 39,
+      "upset_pct": 31.1,
+      "underdog_xg": 1.533
+    },
+    {
+      "date": "2026-06-18",
+      "match": "Czech Republic vs South Africa",
+      "favourite": "South Africa",
+      "underdog": "Czech Republic",
+      "elo_gap": 43,
+      "upset_pct": 29.4,
+      "underdog_xg": 1.121
+    },
+    {
+      "date": "2026-06-19",
+      "match": "USA vs Australia",
+      "favourite": "USA",
+      "underdog": "Australia",
+      "elo_gap": 85,
+      "upset_pct": 23.0,
+      "underdog_xg": 1.181
+    },
+    {
+      "date": "2026-06-17",
+      "match": "England vs Croatia",
+      "favourite": "England",
+      "underdog": "Croatia",
+      "elo_gap": 110,
+      "upset_pct": 19.2,
+      "underdog_xg": 1.17
+    },
+    {
+      "date": "2026-06-17",
+      "match": "Ghana vs Panama",
+      "favourite": "Panama",
+      "underdog": "Ghana",
+      "elo_gap": 188,
+      "upset_pct": 11.6,
+      "underdog_xg": 0.682
+    },
+    {
+      "date": "2026-06-19",
+      "match": "Turkey vs Paraguay",
+      "favourite": "Turkey",
+      "underdog": "Paraguay",
+      "elo_gap": 177,
+      "upset_pct": 11.6,
+      "underdog_xg": 0.882
+    },
+    {
+      "date": "2026-06-14",
+      "match": "Sweden vs Tunisia",
+      "favourite": "Sweden",
+      "underdog": "Tunisia",
+      "elo_gap": 196,
+      "upset_pct": 10.6,
+      "underdog_xg": 0.703
+    },
+    {
+      "date": "2026-06-16",
+      "match": "Argentina vs Algeria",
+      "favourite": "Argentina",
+      "underdog": "Algeria",
+      "elo_gap": 194,
+      "upset_pct": 9.9,
+      "underdog_xg": 0.849
+    },
+    {
+      "date": "2026-06-20",
+      "match": "Netherlands vs Sweden",
+      "favourite": "Netherlands",
+      "underdog": "Sweden",
+      "elo_gap": 205,
+      "upset_pct": 9.4,
+      "underdog_xg": 0.76
+    },
+    {
+      "date": "2026-06-21",
+      "match": "Belgium vs Iran",
+      "favourite": "Belgium",
+      "underdog": "Iran",
+      "elo_gap": 222,
+      "upset_pct": 8.2,
+      "underdog_xg": 0.713
+    },
+    {
+      "date": "2026-06-15",
+      "match": "Belgium vs Egypt",
+      "favourite": "Belgium",
+      "underdog": "Egypt",
+      "elo_gap": 226,
+      "upset_pct": 7.9,
+      "underdog_xg": 0.699
+    },
+    {
+      "date": "2026-06-19",
+      "match": "Scotland vs Morocco",
+      "favourite": "Morocco",
+      "underdog": "Scotland",
+      "elo_gap": 229,
+      "upset_pct": 7.7,
+      "underdog_xg": 0.697
+    },
+    {
+      "date": "2026-06-16",
+      "match": "Austria vs Jordan",
+      "favourite": "Austria",
+      "underdog": "Jordan",
+      "elo_gap": 248,
+      "upset_pct": 6.9,
+      "underdog_xg": 0.589
+    },
+    {
+      "date": "2026-06-18",
+      "match": "Mexico vs South Korea",
+      "favourite": "Mexico",
+      "underdog": "South Korea",
+      "elo_gap": 256,
+      "upset_pct": 6.3,
+      "underdog_xg": 0.591
+    },
+    {
+      "date": "2026-06-15",
+      "match": "Saudi Arabia vs Uruguay",
+      "favourite": "Uruguay",
+      "underdog": "Saudi Arabia",
+      "elo_gap": 293,
+      "upset_pct": 5.1,
+      "underdog_xg": 0.452
+    },
+    {
+      "date": "2026-06-17",
+      "match": "Uzbekistan vs Colombia",
+      "favourite": "Colombia",
+      "underdog": "Uzbekistan",
+      "elo_gap": 284,
+      "upset_pct": 5.1,
+      "underdog_xg": 0.514
+    },
+    {
+      "date": "2026-06-21",
+      "match": "New Zealand vs Egypt",
+      "favourite": "Egypt",
+      "underdog": "New Zealand",
+      "elo_gap": 314,
+      "upset_pct": 4.5,
+      "underdog_xg": 0.393
+    },
+    {
+      "date": "2026-06-15",
+      "match": "Iran vs New Zealand",
+      "favourite": "Iran",
+      "underdog": "New Zealand",
+      "elo_gap": 318,
+      "upset_pct": 4.3,
+      "underdog_xg": 0.385
+    },
+    {
+      "date": "2026-06-16",
+      "match": "France vs Senegal",
+      "favourite": "France",
+      "underdog": "Senegal",
+      "elo_gap": 306,
+      "upset_pct": 4.0,
+      "underdog_xg": 0.49
+    },
+    {
+      "date": "2026-06-18",
+      "match": "Canada vs Qatar",
+      "favourite": "Canada",
+      "underdog": "Qatar",
+      "elo_gap": 544,
+      "upset_pct": 2.2,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-17",
+      "match": "Portugal vs DR Congo",
+      "favourite": "Portugal",
+      "underdog": "DR Congo",
+      "elo_gap": 401,
+      "upset_pct": 2.0,
+      "underdog_xg": 0.287
+    },
+    {
+      "date": "2026-06-18",
+      "match": "Switzerland vs Bosnia & Herzegovina",
+      "favourite": "Switzerland",
+      "underdog": "Bosnia & Herzegovina",
+      "elo_gap": 442,
+      "upset_pct": 1.9,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-14",
+      "match": "Ivory Coast vs Ecuador",
+      "favourite": "Ecuador",
+      "underdog": "Ivory Coast",
+      "elo_gap": 480,
+      "upset_pct": 1.8,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-20",
+      "match": "Ecuador vs Cura\u00e7ao",
+      "favourite": "Ecuador",
+      "underdog": "Cura\u00e7ao",
+      "elo_gap": 632,
+      "upset_pct": 1.8,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-14",
+      "match": "Germany vs Cura\u00e7ao",
+      "favourite": "Germany",
+      "underdog": "Cura\u00e7ao",
+      "elo_gap": 705,
+      "upset_pct": 1.7,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-16",
+      "match": "Iraq vs Norway",
+      "favourite": "Norway",
+      "underdog": "Iraq",
+      "elo_gap": 445,
+      "upset_pct": 1.7,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-19",
+      "match": "Brazil vs Haiti",
+      "favourite": "Brazil",
+      "underdog": "Haiti",
+      "elo_gap": 539,
+      "upset_pct": 1.7,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-20",
+      "match": "Tunisia vs Japan",
+      "favourite": "Japan",
+      "underdog": "Tunisia",
+      "elo_gap": 440,
+      "upset_pct": 1.7,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-20",
+      "match": "Germany vs Ivory Coast",
+      "favourite": "Germany",
+      "underdog": "Ivory Coast",
+      "elo_gap": 552,
+      "upset_pct": 1.6,
+      "underdog_xg": 0.25
+    },
+    {
+      "date": "2026-06-15",
+      "match": "Spain vs Cape Verde",
+      "favourite": "Spain",
+      "underdog": "Cape Verde",
+      "elo_gap": 719,
+      "upset_pct": 1.3,
+      "underdog_xg": 0.25
+    }
+  ],
+  "group_draw": {
+    "A": {
+      "teams": [
+        {
+          "team": "Mexico",
+          "elo": 2279,
+          "adv_pct": 100.0,
+          "r32_pct": 96.1,
+          "win_pct": 0.6
+        },
+        {
+          "team": "South Korea",
+          "elo": 2023,
+          "adv_pct": 100.0,
+          "r32_pct": 47.9,
+          "win_pct": 0.1
+        },
+        {
+          "team": "South Africa",
+          "elo": 1827,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Czech Republic",
+          "elo": 1784,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 1978.2
+    },
+    "B": {
+      "teams": [
+        {
+          "team": "Switzerland",
+          "elo": 2276,
+          "adv_pct": 100.0,
+          "r32_pct": 85.5,
+          "win_pct": 0.3
+        },
+        {
+          "team": "Canada",
+          "elo": 2169,
+          "adv_pct": 100.0,
+          "r32_pct": 22.4,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Bosnia & Herzegovina",
+          "elo": 1834,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Qatar",
+          "elo": 1624,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 1975.8
+    },
+    "C": {
+      "teams": [
+        {
+          "team": "Brazil",
+          "elo": 2358,
+          "adv_pct": 100.0,
+          "r32_pct": 97.6,
+          "win_pct": 5.2
+        },
+        {
+          "team": "Morocco",
+          "elo": 2341,
+          "adv_pct": 100.0,
+          "r32_pct": 83.9,
+          "win_pct": 1.3
+        },
+        {
+          "team": "Scotland",
+          "elo": 2112,
+          "adv_pct": 100.0,
+          "r32_pct": 67.7,
+          "win_pct": 0.3
+        },
+        {
+          "team": "Haiti",
+          "elo": 1818,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2157.2
+    },
+    "D": {
+      "teams": [
+        {
+          "team": "Turkey",
+          "elo": 2331,
+          "adv_pct": 100.0,
+          "r32_pct": 74.0,
+          "win_pct": 0.3
+        },
+        {
+          "team": "USA",
+          "elo": 2162,
+          "adv_pct": 100.0,
+          "r32_pct": 98.5,
+          "win_pct": 1.8
+        },
+        {
+          "team": "Paraguay",
+          "elo": 2154,
+          "adv_pct": 100.0,
+          "r32_pct": 59.3,
+          "win_pct": 0.2
+        },
+        {
+          "team": "Australia",
+          "elo": 2077,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2181.0
+    },
+    "E": {
+      "teams": [
+        {
+          "team": "Germany",
+          "elo": 2377,
+          "adv_pct": 100.0,
+          "r32_pct": 97.9,
+          "win_pct": 4.1
+        },
+        {
+          "team": "Ecuador",
+          "elo": 2305,
+          "adv_pct": 100.0,
+          "r32_pct": 66.0,
+          "win_pct": 0.4
+        },
+        {
+          "team": "Ivory Coast",
+          "elo": 1825,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Cura\u00e7ao",
+          "elo": 1672,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2044.8
+    },
+    "F": {
+      "teams": [
+        {
+          "team": "Japan",
+          "elo": 2331,
+          "adv_pct": 100.0,
+          "r32_pct": 82.0,
+          "win_pct": 0.9
+        },
+        {
+          "team": "Netherlands",
+          "elo": 2292,
+          "adv_pct": 100.0,
+          "r32_pct": 99.8,
+          "win_pct": 27.7
+        },
+        {
+          "team": "Sweden",
+          "elo": 2086,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Tunisia",
+          "elo": 1890,
+          "adv_pct": 100.0,
+          "r32_pct": 43.4,
+          "win_pct": 0.1
+        }
+      ],
+      "avg_elo": 2149.8
+    },
+    "G": {
+      "teams": [
+        {
+          "team": "Belgium",
+          "elo": 2321,
+          "adv_pct": 100.0,
+          "r32_pct": 97.6,
+          "win_pct": 4.9
+        },
+        {
+          "team": "Iran",
+          "elo": 2099,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Egypt",
+          "elo": 2094,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "New Zealand",
+          "elo": 1780,
+          "adv_pct": 100.0,
+          "r32_pct": 60.9,
+          "win_pct": 0.1
+        }
+      ],
+      "avg_elo": 2073.5
+    },
+    "H": {
+      "teams": [
+        {
+          "team": "Spain",
+          "elo": 2539,
+          "adv_pct": 100.0,
+          "r32_pct": 91.7,
+          "win_pct": 2.3
+        },
+        {
+          "team": "Uruguay",
+          "elo": 2147,
+          "adv_pct": 100.0,
+          "r32_pct": 89.6,
+          "win_pct": 1.7
+        },
+        {
+          "team": "Saudi Arabia",
+          "elo": 1853,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Cape Verde",
+          "elo": 1820,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2089.8
+    },
+    "I": {
+      "teams": [
+        {
+          "team": "France",
+          "elo": 2402,
+          "adv_pct": 100.0,
+          "r32_pct": 99.7,
+          "win_pct": 19.2
+        },
+        {
+          "team": "Norway",
+          "elo": 2340,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Senegal",
+          "elo": 2096,
+          "adv_pct": 100.0,
+          "r32_pct": 94.2,
+          "win_pct": 0.8
+        },
+        {
+          "team": "Iraq",
+          "elo": 1895,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2183.2
+    },
+    "J": {
+      "teams": [
+        {
+          "team": "Argentina",
+          "elo": 2408,
+          "adv_pct": 100.0,
+          "r32_pct": 99.0,
+          "win_pct": 10.0
+        },
+        {
+          "team": "Algeria",
+          "elo": 2214,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Austria",
+          "elo": 2206,
+          "adv_pct": 100.0,
+          "r32_pct": 68.5,
+          "win_pct": 0.2
+        },
+        {
+          "team": "Jordan",
+          "elo": 1957,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2196.2
+    },
+    "K": {
+      "teams": [
+        {
+          "team": "Portugal",
+          "elo": 2363,
+          "adv_pct": 100.0,
+          "r32_pct": 95.6,
+          "win_pct": 2.1
+        },
+        {
+          "team": "Colombia",
+          "elo": 2282,
+          "adv_pct": 100.0,
+          "r32_pct": 95.7,
+          "win_pct": 4.4
+        },
+        {
+          "team": "Uzbekistan",
+          "elo": 1998,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "DR Congo",
+          "elo": 1961,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2151.0
+    },
+    "L": {
+      "teams": [
+        {
+          "team": "England",
+          "elo": 2326,
+          "adv_pct": 100.0,
+          "r32_pct": 99.1,
+          "win_pct": 3.9
+        },
+        {
+          "team": "Croatia",
+          "elo": 2216,
+          "adv_pct": 100.0,
+          "r32_pct": 95.2,
+          "win_pct": 2.9
+        },
+        {
+          "team": "Panama",
+          "elo": 1977,
+          "adv_pct": 100.0,
+          "r32_pct": 38.0,
+          "win_pct": 0.0
+        },
+        {
+          "team": "Ghana",
+          "elo": 1789,
+          "adv_pct": 100.0,
+          "r32_pct": 0.0,
+          "win_pct": 0.0
+        }
+      ],
+      "avg_elo": 2077.0
+    }
+  },
+  "top_teams": [
+    {
+      "team": "Spain",
+      "elo": 2539.5,
+      "rank": 1
+    },
+    {
+      "team": "Argentina",
+      "elo": 2408.8,
+      "rank": 2
+    },
+    {
+      "team": "France",
+      "elo": 2402.6,
+      "rank": 3
+    },
+    {
+      "team": "Germany",
+      "elo": 2377.9,
+      "rank": 4
+    },
+    {
+      "team": "Portugal",
+      "elo": 2363.6,
+      "rank": 5
+    },
+    {
+      "team": "Brazil",
+      "elo": 2358.0,
+      "rank": 6
+    },
+    {
+      "team": "Morocco",
+      "elo": 2341.2,
+      "rank": 7
+    },
+    {
+      "team": "Norway",
+      "elo": 2340.3,
+      "rank": 8
+    },
+    {
+      "team": "Turkey",
+      "elo": 2331.9,
+      "rank": 9
+    },
+    {
+      "team": "Japan",
+      "elo": 2331.2,
+      "rank": 10
+    },
+    {
+      "team": "England",
+      "elo": 2326.8,
+      "rank": 11
+    },
+    {
+      "team": "Belgium",
+      "elo": 2321.2,
+      "rank": 12
+    },
+    {
+      "team": "Ecuador",
+      "elo": 2305.3,
+      "rank": 13
+    },
+    {
+      "team": "Netherlands",
+      "elo": 2292.2,
+      "rank": 14
+    },
+    {
+      "team": "Colombia",
+      "elo": 2282.3,
+      "rank": 15
+    },
+    {
+      "team": "Mexico",
+      "elo": 2279.8,
+      "rank": 16
+    },
+    {
+      "team": "Switzerland",
+      "elo": 2276.3,
+      "rank": 17
+    },
+    {
+      "team": "Basque Country",
+      "elo": 2239.8,
+      "rank": 18
+    },
+    {
+      "team": "Italy",
+      "elo": 2230.8,
+      "rank": 19
+    },
+    {
+      "team": "Denmark",
+      "elo": 2222.4,
+      "rank": 20
+    }
+  ],
+  "best_bets": [
+    {
+      "game_date": "2026-06-14",
+      "game": "Ivory Coast vs Ecuador",
+      "bet_type": "1X2",
+      "pick": "Ecuador Win",
+      "confidence": 0.8981,
+      "edge": 0.4899,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 1825,
+      "away_elo": 2305,
+      "odds_source": "real",
+      "notes": "xG 0.25\u20132.84  |  Elo 1825 vs 2305"
+    },
+    {
+      "game_date": "2026-06-17",
+      "game": "Ghana vs Panama",
+      "bet_type": "1X2",
+      "pick": "Panama Win",
+      "confidence": 0.6873,
+      "edge": 0.4016,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 1789,
+      "away_elo": 1977,
+      "odds_source": "real",
+      "notes": "xG 0.68\u20132.02  |  Elo 1789 vs 1977"
+    },
+    {
+      "game_date": "2026-06-20",
+      "game": "Tunisia vs Japan",
+      "bet_type": "1X2",
+      "pick": "Japan Win",
+      "confidence": 0.9008,
+      "edge": 0.316,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 1890,
+      "away_elo": 2331,
+      "odds_source": "real",
+      "notes": "xG 0.25\u20132.87  |  Elo 1890 vs 2331"
+    },
+    {
+      "game_date": "2026-06-18",
+      "game": "Mexico vs South Korea",
+      "bet_type": "1X2",
+      "pick": "Mexico Win",
+      "confidence": 0.8017,
+      "edge": 0.3017,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2279,
+      "away_elo": 2023,
+      "odds_source": "real",
+      "notes": "xG 2.58\u20130.59  |  Elo 2279 vs 2023"
+    },
+    {
+      "game_date": "2026-06-19",
+      "game": "Scotland vs Morocco",
+      "bet_type": "1X2",
+      "pick": "Morocco Win",
+      "confidence": 0.7826,
+      "edge": 0.2826,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2112,
+      "away_elo": 2341,
+      "odds_source": "real",
+      "notes": "xG 0.70\u20132.61  |  Elo 2112 vs 2341"
+    },
+    {
+      "game_date": "2026-06-15",
+      "game": "Iran vs New Zealand",
+      "bet_type": "1X2",
+      "pick": "Iran Win",
+      "confidence": 0.8248,
+      "edge": 0.2784,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2099,
+      "away_elo": 1780,
+      "odds_source": "real",
+      "notes": "xG 2.41\u20130.39  |  Elo 2099 vs 1780"
+    },
+    {
+      "game_date": "2026-06-19",
+      "game": "Turkey vs Paraguay",
+      "bet_type": "1X2",
+      "pick": "Turkey Win",
+      "confidence": 0.7181,
+      "edge": 0.2737,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2331,
+      "away_elo": 2154,
+      "odds_source": "real",
+      "notes": "xG 2.45\u20130.88  |  Elo 2331 vs 2154"
+    },
+    {
+      "game_date": "2026-06-18",
+      "game": "Switzerland vs Bosnia & Herzegovina",
+      "bet_type": "1X2",
+      "pick": "Switzerland Win",
+      "confidence": 0.8932,
+      "edge": 0.2721,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2276,
+      "away_elo": 1834,
+      "odds_source": "real",
+      "notes": "xG 2.78\u20130.25  |  Elo 2276 vs 1834"
+    },
+    {
+      "game_date": "2026-06-20",
+      "game": "Germany vs Ivory Coast",
+      "bet_type": "1X2",
+      "pick": "Germany Win",
+      "confidence": 0.9077,
+      "edge": 0.2667,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2377,
+      "away_elo": 1825,
+      "odds_source": "real",
+      "notes": "xG 2.96\u20130.25  |  Elo 2377 vs 1825"
+    },
+    {
+      "game_date": "2026-06-21",
+      "game": "New Zealand vs Egypt",
+      "bet_type": "1X2",
+      "pick": "Egypt Win",
+      "confidence": 0.8214,
+      "edge": 0.2564,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 1780,
+      "away_elo": 2094,
+      "odds_source": "real",
+      "notes": "xG 0.39\u20132.40  |  Elo 1780 vs 2094"
+    },
+    {
+      "game_date": "2026-06-18",
+      "game": "Czech Republic vs South Africa",
+      "bet_type": "1X2",
+      "pick": "South Africa Win",
+      "confidence": 0.4441,
+      "edge": 0.2441,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 1784,
+      "away_elo": 1827,
+      "odds_source": "real",
+      "notes": "xG 1.12\u20131.44  |  Elo 1784 vs 1827"
+    },
+    {
+      "game_date": "2026-06-14",
+      "game": "Netherlands vs Japan",
+      "bet_type": "1X2",
+      "pick": "Japan Win",
+      "confidence": 0.469,
+      "edge": 0.2058,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2292,
+      "away_elo": 2331,
+      "odds_source": "real",
+      "notes": "xG 1.53\u20131.92  |  Elo 2292 vs 2331"
+    },
+    {
+      "game_date": "2026-06-18",
+      "game": "Mexico vs South Korea",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6139,
+      "edge": 0.2057,
+      "tier": "Elite",
+      "xg_total": 3.171,
+      "home_elo": 2279,
+      "away_elo": 2023,
+      "odds_source": "real",
+      "notes": "xG 2.58\u20130.59  |  Elo 2279 vs 2023"
+    },
+    {
+      "game_date": "2026-06-19",
+      "game": "Turkey vs Paraguay",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6469,
+      "edge": 0.2025,
+      "tier": "Elite",
+      "xg_total": 3.332,
+      "home_elo": 2331,
+      "away_elo": 2154,
+      "odds_source": "real",
+      "notes": "xG 2.45\u20130.88  |  Elo 2331 vs 2154"
+    },
+    {
+      "game_date": "2026-06-19",
+      "game": "Scotland vs Morocco",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6411,
+      "edge": 0.1967,
+      "tier": "Elite",
+      "xg_total": 3.303,
+      "home_elo": 2112,
+      "away_elo": 2341,
+      "odds_source": "real",
+      "notes": "xG 0.70\u20132.61  |  Elo 2112 vs 2341"
+    },
+    {
+      "game_date": "2026-06-17",
+      "game": "England vs Croatia",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6568,
+      "edge": 0.1917,
+      "tier": "Elite",
+      "xg_total": 3.382,
+      "home_elo": 2326,
+      "away_elo": 2216,
+      "odds_source": "real",
+      "notes": "xG 2.21\u20131.17  |  Elo 2326 vs 2216"
+    },
+    {
+      "game_date": "2026-06-14",
+      "game": "Sweden vs Tunisia",
+      "bet_type": "1X2",
+      "pick": "Sweden Win",
+      "confidence": 0.7132,
+      "edge": 0.1896,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2086,
+      "away_elo": 1890,
+      "odds_source": "real",
+      "notes": "xG 2.18\u20130.70  |  Elo 2086 vs 1890"
+    },
+    {
+      "game_date": "2026-06-16",
+      "game": "France vs Senegal",
+      "bet_type": "1X2",
+      "pick": "France Win",
+      "confidence": 0.8548,
+      "edge": 0.1791,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2402,
+      "away_elo": 2096,
+      "odds_source": "real",
+      "notes": "xG 2.85\u20130.49  |  Elo 2402 vs 2096"
+    },
+    {
+      "game_date": "2026-06-16",
+      "game": "Argentina vs Algeria",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6701,
+      "edge": 0.1573,
+      "tier": "Elite",
+      "xg_total": 3.452,
+      "home_elo": 2408,
+      "away_elo": 2214,
+      "odds_source": "real",
+      "notes": "xG 2.60\u20130.85  |  Elo 2408 vs 2214"
+    },
+    {
+      "game_date": "2026-06-15",
+      "game": "Belgium vs Egypt",
+      "bet_type": "1X2",
+      "pick": "Belgium Win",
+      "confidence": 0.7773,
+      "edge": 0.1562,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2321,
+      "away_elo": 2094,
+      "odds_source": "real",
+      "notes": "xG 2.57\u20130.70  |  Elo 2321 vs 2094"
+    },
+    {
+      "game_date": "2026-06-20",
+      "game": "Tunisia vs Japan",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6034,
+      "edge": 0.1489,
+      "tier": "Elite",
+      "xg_total": 3.122,
+      "home_elo": 1890,
+      "away_elo": 2331,
+      "odds_source": "real",
+      "notes": "xG 0.25\u20132.87  |  Elo 1890 vs 2331"
+    },
+    {
+      "game_date": "2026-06-14",
+      "game": "Netherlands vs Japan",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6702,
+      "edge": 0.1466,
+      "tier": "Elite",
+      "xg_total": 3.452,
+      "home_elo": 2292,
+      "away_elo": 2331,
+      "odds_source": "real",
+      "notes": "xG 1.53\u20131.92  |  Elo 2292 vs 2331"
+    },
+    {
+      "game_date": "2026-06-20",
+      "game": "Netherlands vs Sweden",
+      "bet_type": "1X2",
+      "pick": "Netherlands Win",
+      "confidence": 0.7498,
+      "edge": 0.1437,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2292,
+      "away_elo": 2086,
+      "odds_source": "real",
+      "notes": "xG 2.48\u20130.76  |  Elo 2292 vs 2086"
+    },
+    {
+      "game_date": "2026-06-15",
+      "game": "Spain vs Cape Verde",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6636,
+      "edge": 0.14,
+      "tier": "Elite",
+      "xg_total": 3.42,
+      "home_elo": 2539,
+      "away_elo": 1820,
+      "odds_source": "real",
+      "notes": "xG 3.17\u20130.25  |  Elo 2539 vs 1820"
+    },
+    {
+      "game_date": "2026-06-16",
+      "game": "France vs Senegal",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6489,
+      "edge": 0.1361,
+      "tier": "Elite",
+      "xg_total": 3.343,
+      "home_elo": 2402,
+      "away_elo": 2096,
+      "odds_source": "real",
+      "notes": "xG 2.85\u20130.49  |  Elo 2402 vs 2096"
+    },
+    {
+      "game_date": "2026-06-15",
+      "game": "Belgium vs Egypt",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6346,
+      "edge": 0.1295,
+      "tier": "Elite",
+      "xg_total": 3.271,
+      "home_elo": 2321,
+      "away_elo": 2094,
+      "odds_source": "real",
+      "notes": "xG 2.57\u20130.70  |  Elo 2321 vs 2094"
+    },
+    {
+      "game_date": "2026-06-17",
+      "game": "Portugal vs DR Congo",
+      "bet_type": "1X2",
+      "pick": "Portugal Win",
+      "confidence": 0.8968,
+      "edge": 0.1216,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 2363,
+      "away_elo": 1961,
+      "odds_source": "real",
+      "notes": "xG 2.90\u20130.29  |  Elo 2363 vs 1961"
+    },
+    {
+      "game_date": "2026-06-15",
+      "game": "Saudi Arabia vs Uruguay",
+      "bet_type": "1X2",
+      "pick": "Uruguay Win",
+      "confidence": 0.815,
+      "edge": 0.1206,
+      "tier": "Elite",
+      "xg_total": null,
+      "home_elo": 1853,
+      "away_elo": 2147,
+      "odds_source": "real",
+      "notes": "xG 0.45\u20132.45  |  Elo 1853 vs 2147"
+    },
+    {
+      "game_date": "2026-06-15",
+      "game": "Iran vs New Zealand",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.53,
+      "edge": 0.1133,
+      "tier": "Elite",
+      "xg_total": 2.798,
+      "home_elo": 2099,
+      "away_elo": 1780,
+      "odds_source": "real",
+      "notes": "xG 2.41\u20130.39  |  Elo 2099 vs 1780"
+    },
+    {
+      "game_date": "2026-06-19",
+      "game": "USA vs Australia",
+      "bet_type": "O/U",
+      "pick": "Over 2.5",
+      "confidence": 0.6021,
+      "edge": 0.1119,
+      "tier": "Elite",
+      "xg_total": 3.115,
+      "home_elo": 2162,
+      "away_elo": 2077,
+      "odds_source": "real",
+      "notes": "xG 1.93\u20131.18  |  Elo 2162 vs 2077"
+    }
+  ]
+}

@@ -1,28 +1,38 @@
 """
 API Client module for GoallineIQ.
-Handles BALLDONTLIE FIFA API, API-Football, and openfootball GitHub data.
+Handles BALLDONTLIE FIFA API, API-Football, ESPN (unofficial), The Odds API,
+and openfootball GitHub data.
 Covers World Cup tournaments: 2010, 2014, 2018, 2022, 2026.
 """
 import os
+import json
 import requests
 import pandas as pd
 import numpy as np
 from typing import Optional, Dict, List, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # ── API Keys ────────────────────────────────────────────────────────────────
-BALLDONTLIE_KEY = os.getenv("BALLDONTLIE_API_KEY", "")
+BALLDONTLIE_KEY  = os.getenv("BALLDONTLIE_API_KEY", "")
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "")
-SPORTS_DB_KEY = os.getenv("THE_SPORTS_DB_KEY", "123")
+SPORTS_DB_KEY    = os.getenv("THE_SPORTS_DB_KEY", "123")
+ODDS_API_KEY     = os.getenv("ODDS_API_KEY", "")
 
 # ── Base URLs ────────────────────────────────────────────────────────────────
-BDL_BASE = "https://fifa.balldontlie.io/api/v1"
-APF_BASE = "https://v3.football.api-sports.io"
+BDL_BASE          = "https://fifa.balldontlie.io/api/v1"
+APF_BASE          = "https://v3.football.api-sports.io"
 OPENFOOTBALL_BASE = "https://raw.githubusercontent.com/openfootball/worldcup.json/master"
+ESPN_BASE         = "https://site.api.espn.com/apis"
+ODDS_API_BASE     = "https://api.the-odds-api.com/v4"
+
+# ── Snapshot directory ───────────────────────────────────────────────────────
+_REPO_ROOT     = Path(__file__).resolve().parent.parent
+_SNAPSHOT_DIR  = _REPO_ROOT / "data_files" / "nightly_snapshots"
 
 # ── WC seasons (data pull covers 2010–2026) ──────────────────────────────────
 WC_SEASONS = [2010, 2014, 2018, 2022, 2026]
@@ -490,6 +500,247 @@ apf_client = APIFootballClient()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ESPN UNOFFICIAL API  (no key required — replaces API-Football for live data)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class ESPNClient:
+    """Lightweight wrapper for the ESPN unofficial soccer API.
+
+    No API key required; intended as a free replacement for API-Football
+    standing and fixture data when that service is unavailable.
+    """
+
+    SPORT_PATH = "site/v2/sports/soccer/fifa.world"
+
+    def _get(self, path: str, params: Optional[Dict] = None) -> Optional[Dict]:
+        try:
+            url = f"{ESPN_BASE}/{path}"
+            r = requests.get(url, params=params or {}, timeout=12)
+            r.raise_for_status()
+            return r.json()
+        except Exception:
+            return None
+
+    @st.cache_data(ttl=120, show_spinner=False)
+    def get_scoreboard(_self) -> pd.DataFrame:
+        """Live and recent scores from the ESPN scoreboard endpoint."""
+        data = _self._get(f"{_self.SPORT_PATH}/scoreboard")
+        if not data:
+            return pd.DataFrame()
+        rows = []
+        for event in data.get("events", []):
+            comp = (event.get("competitions") or [{}])[0]
+            comps_teams = comp.get("competitors", [])
+            home = next((t for t in comps_teams if t.get("homeAway") == "home"), {})
+            away = next((t for t in comps_teams if t.get("homeAway") == "away"), {})
+            status = event.get("status", {}).get("type", {})
+            rows.append({
+                "id": event.get("id"),
+                "date": event.get("date"),
+                "home_team": home.get("team", {}).get("displayName", ""),
+                "away_team": away.get("team", {}).get("displayName", ""),
+                "home_goals": home.get("score"),
+                "away_goals": away.get("score"),
+                "status": status.get("shortDetail", ""),
+                "completed": status.get("completed", False),
+                "venue": comp.get("venue", {}).get("fullName", ""),
+                "city": comp.get("venue", {}).get("address", {}).get("city", ""),
+            })
+        return pd.DataFrame(rows)
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def get_schedule(_self, date_str: Optional[str] = None) -> pd.DataFrame:
+        """Upcoming / recent schedule.  date_str format: 'YYYYMMDD'."""
+        params = {}
+        if date_str:
+            params["dates"] = date_str
+        data = _self._get(f"{_self.SPORT_PATH}/scoreboard", params)
+        if not data:
+            return pd.DataFrame()
+        rows = []
+        for event in data.get("events", []):
+            comp = (event.get("competitions") or [{}])[0]
+            comps_teams = comp.get("competitors", [])
+            home = next((t for t in comps_teams if t.get("homeAway") == "home"), {})
+            away = next((t for t in comps_teams if t.get("homeAway") == "away"), {})
+            status = event.get("status", {}).get("type", {})
+            season_type = event.get("season", {}).get("type", {})
+            rows.append({
+                "source": "espn",
+                "season": 2026,
+                "date": event.get("date"),
+                "round": season_type.get("name", ""),
+                "group": "",
+                "home_team": home.get("team", {}).get("displayName", ""),
+                "away_team": away.get("team", {}).get("displayName", ""),
+                "home_goals": home.get("score"),
+                "away_goals": away.get("score"),
+                "venue": comp.get("venue", {}).get("fullName", ""),
+                "city": comp.get("venue", {}).get("address", {}).get("city", ""),
+                "status": "completed" if status.get("completed") else "scheduled",
+            })
+        return pd.DataFrame(rows)
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def get_standings(_self) -> pd.DataFrame:
+        """Group standings from ESPN."""
+        data = _self._get("v2/sports/soccer/fifa.world/standings")
+        if not data:
+            return pd.DataFrame()
+        rows = []
+        for group_block in data.get("children", []):
+            group_name = group_block.get("abbreviation", group_block.get("name", ""))
+            for entry in group_block.get("standings", {}).get("entries", []):
+                team = entry.get("team", {})
+                stats = {s["name"]: s.get("value", 0) for s in entry.get("stats", [])}
+                rows.append({
+                    "group": group_name,
+                    "rank": entry.get("stats", [{}])[0].get("rank", 0) if entry.get("stats") else 0,
+                    "team": team.get("displayName", ""),
+                    "played":       int(stats.get("gamesPlayed", 0)),
+                    "won":          int(stats.get("wins", 0)),
+                    "drawn":        int(stats.get("ties", 0)),
+                    "lost":         int(stats.get("losses", 0)),
+                    "goals_for":    int(stats.get("pointsFor", 0)),
+                    "goals_against":int(stats.get("pointsAgainst", 0)),
+                    "goal_diff":    int(stats.get("pointDifferential", 0)),
+                    "points":       int(stats.get("points", 0)),
+                })
+        return pd.DataFrame(rows)
+
+
+espn_client = ESPNClient()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# THE ODDS API  (ODDS_API_KEY — max 500 req/month; aggressively cached)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class OddsAPIClient:
+    """Client for The Odds API (https://the-odds-api.com).
+
+    Strategy to minimise request consumption:
+    - Primary: read today's odds snapshot from disk (written by pull_world_cup_data.py)
+    - Fallback: fetch live only if today's snapshot does not exist
+    - All live fetches are cached for 24 hours in Streamlit session
+    - The nightly pull script (run once/day) writes the snapshot so pages
+      never need to hit the API directly during normal operation.
+    """
+
+    SPORT = "soccer_fifa_world_cup"
+
+    def __init__(self):
+        self._snapshot_path = _SNAPSHOT_DIR / date.today().isoformat() / "odds.json"
+
+    def _get(self, path: str, params: Optional[Dict] = None) -> Optional[Any]:
+        if not ODDS_API_KEY:
+            return None
+        try:
+            url = f"{ODDS_API_BASE}/{path}"
+            r = requests.get(url, params={**(params or {}), "apiKey": ODDS_API_KEY}, timeout=15)
+            r.raise_for_status()
+            return r.json()
+        except Exception:
+            return None
+
+    def _load_snapshot(self) -> Optional[List[Dict]]:
+        """Load today's pre-fetched odds snapshot from disk (no API call)."""
+        path = _SNAPSHOT_DIR / date.today().isoformat() / "odds.json"
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return None
+
+    @st.cache_data(ttl=86400, show_spinner=False)
+    def get_wc_odds(_self,
+                    markets: str = "h2h,totals",
+                    regions: str = "us",
+                    bookmakers: str = "draftkings,fanduel,betmgm,williamhill_us,betrivers") -> List[Dict]:
+        """Return upcoming WC match odds.  Reads snapshot if available; fetches only if needed."""
+        snapshot = _self._load_snapshot()
+        if snapshot is not None:
+            return snapshot
+        # Live fetch (consumes 1 request per event returned)
+        data = _self._get(
+            f"sports/{_self.SPORT}/odds",
+            {"regions": regions, "markets": markets, "oddsFormat": "decimal",
+             "bookmakers": bookmakers},
+        )
+        return data or []
+
+    def fetch_and_save_snapshot(self) -> int:
+        """Fetch live odds and persist to today's snapshot directory.
+        Called by pull_world_cup_data.py (once per day).
+        Returns number of events saved."""
+        data = self._get(
+            f"sports/{self.SPORT}/odds",
+            {"regions": "us", "markets": "h2h,totals", "oddsFormat": "decimal",
+             "bookmakers": "draftkings,fanduel,betmgm,williamhill_us,betrivers"},
+        )
+        if not data:
+            return 0
+        path = _SNAPSHOT_DIR / date.today().isoformat() / "odds.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        return len(data)
+
+    def parse_to_df(self, raw: List[Dict]) -> pd.DataFrame:
+        """Flatten raw odds list into a tidy DataFrame."""
+        rows = []
+        for event in (raw or []):
+            home  = event.get("home_team", "")
+            away  = event.get("away_team", "")
+            label = f"{home} vs {away}"
+            game_time = event.get("commence_time", "")
+            for bm in event.get("bookmakers", []):
+                bm_name = bm.get("title", bm.get("key", ""))
+                for mkt in bm.get("markets", []):
+                    mkt_key = mkt.get("key", "")
+                    outcomes = mkt.get("outcomes", [])
+                    if mkt_key == "h2h":
+                        for o in outcomes:
+                            rows.append({
+                                "game": label, "game_time": game_time,
+                                "bookmaker": bm_name, "market": "1X2",
+                                "outcome": o.get("name", ""), "odds": float(o.get("price", 0)),
+                                "line": None,
+                            })
+                    elif mkt_key == "totals":
+                        for o in outcomes:
+                            rows.append({
+                                "game": label, "game_time": game_time,
+                                "bookmaker": bm_name, "market": "O/U",
+                                "outcome": o.get("name", ""),
+                                "odds": float(o.get("price", 0)),
+                                "line": float(o.get("point", 2.5)),
+                            })
+        return pd.DataFrame(rows)
+
+
+odds_client = OddsAPIClient()
+
+
+# ── Snapshot helpers ──────────────────────────────────────────────────────────
+
+def _latest_snapshot_df(filename: str) -> pd.DataFrame:
+    """Read the most recent dated snapshot CSV for a given filename."""
+    if not _SNAPSHOT_DIR.exists():
+        return pd.DataFrame()
+    for snap_dir in sorted(_SNAPSHOT_DIR.iterdir(), reverse=True):
+        path = snap_dir / filename
+        if path.exists():
+            try:
+                df = pd.read_csv(path, low_memory=False)
+                if not df.empty:
+                    return df
+            except Exception:
+                continue
+    return pd.DataFrame()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # COMBINED DATA ACCESS
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -500,6 +751,7 @@ def get_all_wc_matches() -> pd.DataFrame:
     - 2010 & 2014: openfootball (free GitHub JSON)
     - 2018 & 2022: BALLDONTLIE with openfootball fallback
     - 2026: BALLDONTLIE with openfootball fallback
+    - Plus: international_results (1950-2024) for rich Elo training context
     """
     frames: List[pd.DataFrame] = []
 
@@ -538,13 +790,22 @@ def get_all_wc_matches() -> pd.DataFrame:
     for col in ("home_goals", "away_goals"):
         if col in result.columns:
             result[col] = pd.to_numeric(result[col], errors="coerce")
+    
+    # ── Enrich with international_results (1950-2024) for Elo training ───────
+    try:
+        from . import international_results
+        result = international_results.enrich_training_dataset(result)
+    except Exception as e:
+        # Silently fall back to WC-only data if international_results unavailable
+        pass
+    
     return result
 
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_upcoming_matches(n: int = 20) -> pd.DataFrame:
     """Get the next N upcoming 2026 WC matches from any available source."""
-    # BALLDONTLIE
+    # 1. BALLDONTLIE (may be unavailable)
     df = bdl_client.get_matches(2026)
     if df is not None and not df.empty and "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
@@ -555,13 +816,31 @@ def get_upcoming_matches(n: int = 20) -> pd.DataFrame:
         if not upcoming.empty:
             return upcoming.head(n)
 
-    # API-Football fallback
+    # 2. API-Football (may be suspended)
     df = apf_client.get_fixtures(2026, next_n=n)
     if df is not None and not df.empty and "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
         return df.sort_values("date").head(n)
 
-    # openfootball fallback
+    # 3. Nightly snapshot (most reliable during tournament)
+    df = _latest_snapshot_df("upcoming_matches.csv")
+    if not df.empty and "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
+        now = pd.Timestamp.utcnow()
+        upcoming = df[df["date"].isna() | df["date"].gt(now)].sort_values("date")
+        if not upcoming.empty:
+            return upcoming.head(n)
+
+    # 4. ESPN schedule as last resort
+    df = espn_client.get_schedule()
+    if df is not None and not df.empty and "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
+        now = pd.Timestamp.utcnow()
+        upcoming = df[df["date"] >= now].sort_values("date")
+        if not upcoming.empty:
+            return upcoming.head(n)
+
+    # 5. openfootball fallback
     raw = fetch_openfootball_wc(2026)
     if raw:
         df = _parse_openfootball(raw, 2026)
@@ -576,13 +855,40 @@ def get_upcoming_matches(n: int = 20) -> pd.DataFrame:
 @st.cache_data(ttl=120, show_spinner=False)
 def get_current_standings() -> pd.DataFrame:
     """Get 2026 WC group standings, trying multiple sources."""
+    # 1. BALLDONTLIE
     df = bdl_client.get_standings(2026)
     if df is not None and not df.empty:
         return df
+    # 2. API-Football
     df = apf_client.get_standings(2026)
     if df is not None and not df.empty:
         return df
+    # 3. ESPN (free, no key)
+    df = espn_client.get_standings()
+    if df is not None and not df.empty:
+        return df
+    # 4. Nightly snapshot
+    df = _latest_snapshot_df("standings.csv")
+    if not df.empty and "group" in df.columns:
+        return df
     return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_predictions_cache() -> Optional[Dict]:
+    """Load the pre-computed predictions cache written by scripts/precompute_predictions.py.
+
+    Returns the full dict (keys: match_predictions, upset_watch, group_draw,
+    top_teams, best_bets, generated_at) or None if the file doesn't exist yet.
+    Cache TTL is 1 hour so the app always picks up a fresh nightly build.
+    """
+    path = _REPO_ROOT / "data_files" / "predictions_cache.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -597,3 +903,111 @@ def get_historical_top_scorers() -> pd.DataFrame:
     if not frames:
         return pd.DataFrame()
     return pd.concat(frames, ignore_index=True)
+
+
+# ── Odds lookup helper ────────────────────────────────────────────────────────
+
+def _name_key(name: str) -> str:
+    """Normalise a team name to a comparable key (lowercase, strip punctuation)."""
+    import re
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_match_odds_from_snapshot(home_team: str, away_team: str) -> Dict:
+    """Look up real bookmaker odds for a match from today's odds snapshot.
+
+    Returns a dict with keys:
+      - ``bookmakers``: list of {name, h2h_home, h2h_draw, h2h_away,
+                                  ou_line, ou_over, ou_under}
+      - ``best_h2h``: {home, draw, away} — best available decimal odds
+      - ``best_ou``: {line, over, under} — best available O/U odds
+
+    Returns an empty dict if no matching event is found.
+    """
+    raw = odds_client.get_wc_odds()
+    if not raw:
+        return {}
+
+    home_key = _name_key(home_team)
+    away_key = _name_key(away_team)
+
+    # Find the matching event (try both orderings)
+    event = None
+    for ev in raw:
+        ek_h = _name_key(ev.get("home_team", ""))
+        ek_a = _name_key(ev.get("away_team", ""))
+        if (home_key in ek_h or ek_h in home_key) and \
+           (away_key in ek_a or ek_a in away_key):
+            event = ev
+            break
+        if (away_key in ek_h or ek_h in away_key) and \
+           (home_key in ek_a or ek_a in home_key):
+            # Odds API has teams flipped — still useful, just note it
+            event = ev
+            break
+
+    if not event:
+        return {}
+
+    bookmakers_out = []
+    best_h = best_d = best_a = 0.0
+    best_ou_line = 2.5
+    best_ou_over = best_ou_under = 0.0
+
+    flipped = _name_key(event.get("home_team", "")) != home_key
+
+    for bm in event.get("bookmakers", []):
+        bm_name = bm.get("title", bm.get("key", "?"))
+        row: Dict = {"name": bm_name,
+                     "h2h_home": 0.0, "h2h_draw": 0.0, "h2h_away": 0.0,
+                     "ou_line": None, "ou_over": 0.0, "ou_under": 0.0}
+        for mkt in bm.get("markets", []):
+            key = mkt.get("key", "")
+            outcomes = mkt.get("outcomes", [])
+            if key == "h2h":
+                for o in outcomes:
+                    o_key = _name_key(o.get("name", ""))
+                    price  = float(o.get("price", 0))
+                    if o_key in _name_key(event.get("home_team", "")):
+                        row["h2h_home"] = price
+                        if not flipped:
+                            best_h = max(best_h, price)
+                        else:
+                            best_a = max(best_a, price)
+                    elif o_key in _name_key(event.get("away_team", "")):
+                        row["h2h_away"] = price
+                        if not flipped:
+                            best_a = max(best_a, price)
+                        else:
+                            best_h = max(best_h, price)
+                    elif "draw" in o_key or o.get("name", "").lower() == "draw":
+                        row["h2h_draw"] = price
+                        best_d = max(best_d, price)
+            elif key == "totals":
+                for o in outcomes:
+                    line = float(o.get("point", 2.5))
+                    price = float(o.get("price", 0))
+                    name  = o.get("name", "").lower()
+                    if abs(line - 2.5) < 0.01:  # prefer 2.5 line
+                        row["ou_line"] = line
+                        if "over" in name:
+                            row["ou_over"] = price
+                            best_ou_over = max(best_ou_over, price)
+                            best_ou_line = line
+                        elif "under" in name:
+                            row["ou_under"] = price
+                            best_ou_under = max(best_ou_under, price)
+        bookmakers_out.append(row)
+
+    # Re-map best odds to correct home/away if flipped
+    if flipped:
+        best_h, best_a = best_a, best_h
+
+    return {
+        "bookmakers": bookmakers_out,
+        "best_h2h":   {"home": best_h, "draw": best_d, "away": best_a},
+        "best_ou":    {"line": best_ou_line, "over": best_ou_over, "under": best_ou_under},
+        "event_home": event.get("home_team", ""),
+        "event_away": event.get("away_team", ""),
+    }

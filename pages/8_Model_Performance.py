@@ -410,4 +410,108 @@ with tab_roi:
     )
 
 st.divider()
+
+# ── Historical O/U Signal Backtest ────────────────────────────────────────────
+st.markdown('<p class="section-header">📊 O/U 2.5 Signal Backtest — 2022 World Cup</p>', unsafe_allow_html=True)
+st.caption(
+    "Retroactive evaluation of the O/U 2.5 model signal against actual 2022 match results. "
+    "Assumes a fixed 1.91 decimal line on both Over and Under. "
+    "A 'signal' fires when model probability exceeds implied market probability by ≥ 4 %."
+)
+
+if all_matches is not None and not all_matches.empty:
+    wc22 = all_matches[
+        (all_matches["season"] == 2022)
+        & all_matches["home_goals"].notna()
+        & all_matches["away_goals"].notna()
+    ].copy()
+
+    if not wc22.empty:
+        MARKET_OU_LINE = 1.91
+        MARKET_IMP     = 1.0 / MARKET_OU_LINE
+        EDGE_THRESHOLD = 0.04
+        STAKE          = 10.0
+
+        backtest_rows = []
+        for _, row in wc22.iterrows():
+            home = str(row["home_team"])
+            away = str(row["away_team"])
+            try:
+                p = predictor.predict(home, away, neutral=True)
+            except Exception:
+                continue
+            total_goals = int(row["home_goals"]) + int(row["away_goals"])
+            actual_over = total_goals > 2
+
+            ou25 = p.get("ou", {}).get(2.5, {})
+            if not ou25:
+                continue
+
+            over_p  = ou25["over"]
+            under_p = ou25["under"]
+            over_edge  = over_p  - MARKET_IMP
+            under_edge = under_p - MARKET_IMP
+
+            # Only bet where signal fires
+            if over_edge >= EDGE_THRESHOLD:
+                signal = "Over"
+                pnl = STAKE * (MARKET_OU_LINE - 1) if actual_over else -STAKE
+            elif under_edge >= EDGE_THRESHOLD:
+                signal = "Under"
+                pnl = STAKE * (MARKET_OU_LINE - 1) if not actual_over else -STAKE
+            else:
+                signal = None
+                pnl = 0.0
+
+            backtest_rows.append({
+                "Match": f"{home} vs {away}",
+                "Home G": int(row["home_goals"]), "Away G": int(row["away_goals"]),
+                "Total": total_goals,
+                "Model Over%": round(over_p * 100, 1),
+                "Over Edge": round(over_edge * 100, 1),
+                "Under Edge": round(under_edge * 100, 1),
+                "Signal": signal or "—",
+                "Outcome": "Over" if actual_over else "Under",
+                "PnL": round(pnl, 2),
+            })
+
+        bt_df = pd.DataFrame(backtest_rows)
+        signal_df = bt_df[bt_df["Signal"] != "—"].copy()
+
+        if not signal_df.empty:
+            total_bets = len(signal_df)
+            total_pnl  = signal_df["PnL"].sum()
+            winning    = (signal_df["PnL"] > 0).sum()
+            roi        = total_pnl / (STAKE * total_bets) * 100
+
+            sb1, sb2, sb3, sb4 = st.columns(4)
+            sb1.metric("Total Signal Bets", total_bets)
+            sb2.metric("Winners", winning, f"{winning/total_bets*100:.0f}%")
+            sb3.metric("Total P&L", f"${total_pnl:+.2f}")
+            sb4.metric("ROI", f"{roi:+.1f}%",
+                       delta_color="normal" if roi >= 0 else "inverse")
+
+            def _color_pnl(val):
+                if isinstance(val, (int, float)):
+                    return "color:#00c853;font-weight:700;" if val > 0 else ("color:#f44336;" if val < 0 else "")
+                return ""
+
+            s = signal_df.style
+            styled_bt = s.map(_color_pnl, subset=["PnL"]) \
+                        if hasattr(s, "map") \
+                        else s.applymap(_color_pnl, subset=["PnL"])
+            st.dataframe(styled_bt, width="stretch", hide_index=True)
+        else:
+            st.info("No O/U signals met the 4% edge threshold on 2022 data at these model settings.")
+
+        # Show full prediction vs actuals summary
+        st.divider()
+        st.markdown("**All 2022 matches — Model O/U vs Actual:**")
+        summary_df = bt_df[["Match", "Total", "Model Over%", "Over Edge", "Signal", "Outcome", "PnL"]].copy()
+        st.dataframe(summary_df, width="stretch", hide_index=True)
+    else:
+        st.info("2022 World Cup match data not yet loaded.")
+else:
+    st.info("Historical match data unavailable — connect API sources to enable backtest.")
+
 add_betting_oracle_footer()

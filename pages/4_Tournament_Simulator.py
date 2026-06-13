@@ -161,6 +161,10 @@ else:
     results = simulation_results.copy()
     n_sims = simulation_metadata.get("n_simulations", 25000) if simulation_metadata else 25000
 
+    # Normalize the winner probability column name used by the current JSON export.
+    if "Winner %" not in results.columns and "Winner" in results.columns:
+        results["Winner %"] = results["Winner"]
+
     # Add confederation
     results["Confederation"] = results["team"].map(CONFEDERATION).fillna("Other")
 
@@ -176,7 +180,7 @@ else:
     )
 
     # ── Winner probability chart ───────────────────────────────────────────────
-    tab_chart, tab_table, tab_heatmap = st.tabs(["📊 Chart", "📋 Table", "🗺️ Heatmap"])
+    tab_chart, tab_table, tab_heatmap, tab_paths = st.tabs(["📊 Chart", "📋 Table", "🗺️ Heatmap", "🛤️ Knockout Paths"])
 
     with tab_chart:
         fig_win = px.bar(
@@ -222,7 +226,11 @@ else:
             return "color:#757575;"
 
         numeric_c = [c for c in stage_cols if c in display.columns]
-        styled = display.style.applymap(color_pct, subset=numeric_c)
+        styler = display.style
+        if hasattr(styler, "map"):
+            styled = styler.map(color_pct, subset=numeric_c)
+        else:
+            styled = styler.applymap(color_pct, subset=numeric_c)
         st.dataframe(styled, width="stretch", hide_index=True)
 
         st.caption(
@@ -248,6 +256,78 @@ else:
         )
         st.plotly_chart(fig_hm, width="stretch")
 
+    with tab_paths:
+        st.caption(
+            "Select any team to see their predicted route through the tournament. "
+            f"Based on {n_sims:,} Monte Carlo simulations."
+        )
+        all_sim_teams = sorted(simulation_results["team"].tolist())
+        path_team = st.selectbox("Select team", all_sim_teams, key="path_team_sel")
+
+        stage_cols_ordered = [c for c in
+            ["Group Stage", "Round of 32", "Round of 16", "Quarterfinal", "Semifinal", "Final", "Winner %"]
+            if c in simulation_results.columns]
+
+        if path_team:
+            team_row = simulation_results[simulation_results["team"] == path_team].iloc[0]
+            stage_vals = [team_row[s] for s in stage_cols_ordered]
+
+            bar_colors = [
+                "#00c853" if v >= 50 else ("#ffd600" if v >= 25 else ("#ff9800" if v >= 10 else "#f44336"))
+                for v in stage_vals
+            ]
+
+            fig_path = go.Figure(go.Bar(
+                x=stage_cols_ordered,
+                y=stage_vals,
+                marker_color=bar_colors,
+                text=[f"{v:.1f}%" for v in stage_vals],
+                textposition="outside",
+            ))
+            fig_path.update_layout(
+                title=f"{path_team} — Tournament Path Probabilities",
+                yaxis=dict(title="Probability (%)", range=[0, 110]),
+                paper_bgcolor=_BG, plot_bgcolor=_BG,
+                font_color=_FC, margin=dict(l=10, r=10, t=50, b=10),
+                height=380,
+            )
+            fig_path.update_traces(marker_line_width=0)
+            st.plotly_chart(fig_path, width="stretch")
+
+            # Stage-by-stage drop-off table for selected team
+            dropoff_rows = []
+            for i, (s, v) in enumerate(zip(stage_cols_ordered, stage_vals)):
+                prev = stage_vals[i - 1] if i > 0 else 100.0
+                elim = round(prev - v, 1) if i > 0 else 0.0
+                dropoff_rows.append({"Stage": s, "Prob %": round(v, 1), "Eliminated here %": elim})
+            st.dataframe(pd.DataFrame(dropoff_rows), width="stretch", hide_index=True)
+
+        st.divider()
+        st.markdown("#### 📊 Stage-by-Stage Comparison (All Teams)")
+        compare_stage = st.selectbox(
+            "Compare stage",
+            [c for c in stage_cols_ordered if c != "Group Stage"],
+            index=stage_cols_ordered.index("Winner %") - 1 if "Winner %" in stage_cols_ordered else 0,
+            key="compare_stage_sel",
+        )
+        compare_df = simulation_results[["team", compare_stage]].nlargest(20, compare_stage).copy()
+        fig_cmp = px.bar(
+            compare_df, x=compare_stage, y="team", orientation="h",
+            color=compare_stage,
+            color_continuous_scale=["#1a237e", "#00c853"],
+            text=compare_stage,
+            title=f"Top 20 Teams — {compare_stage} Probability",
+            height=500,
+        )
+        fig_cmp.update_traces(texttemplate="%{text:.1f}%", textposition="outside", marker_line_width=0)
+        fig_cmp.update_layout(
+            paper_bgcolor=_BG, plot_bgcolor=_BG, font_color=_FC,
+            coloraxis_showscale=False,
+            yaxis={"categoryorder": "total ascending"},
+            margin=dict(l=10, r=60, t=40, b=10),
+        )
+        st.plotly_chart(fig_cmp, width="stretch")
+
     # ── Top 5 highlights ──────────────────────────────────────────────────────
     st.divider()
     st.markdown('<p class="section-header">🏆 Top 5 Contenders</p>', unsafe_allow_html=True)
@@ -261,6 +341,89 @@ else:
                 value=f"{row.get(winner_col, 0):.1f}%",
                 help=f"Final: {row.get('Final', 0):.1f}%  |  SF: {row.get('Semifinal', 0):.1f}%",
             )
+
+    # ── Upset Watch ──────────────────────────────────────────────────────────
+    st.divider()
+    st.markdown('<p class="section-header">⚡ Upset Watch — Biggest Mismatches</p>', unsafe_allow_html=True)
+    st.caption(
+        "Upcoming matches where Elo gives the 'underdog' a meaningful win chance. "
+        "Upsets (P > 20 %) are highlighted."
+    )
+
+    try:
+        import sys, os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from goallineiq_utils.api_client import get_upcoming_matches
+        from goallineiq_utils.models import build_predictor, get_predictor
+        from goallineiq_utils.api_client import get_all_wc_matches
+
+        _all = get_all_wc_matches()
+        _pred = build_predictor(_all)
+        _upcoming = get_upcoming_matches(n=16)
+
+        if _upcoming is not None and not _upcoming.empty:
+            upset_rows = []
+            for _, row in _upcoming.iterrows():
+                home = str(row.get("home_team", ""))
+                away = str(row.get("away_team", ""))
+                if not home or not away:
+                    continue
+                try:
+                    p = _pred.predict(home, away, neutral=True)
+                    elo_h, elo_a = p["home_elo"], p["away_elo"]
+                    # Tag which side is the "underdog"
+                    if elo_h < elo_a:
+                        underdog, favourite = home, away
+                        upset_p = p["home_win"]
+                        elo_gap = elo_a - elo_h
+                    else:
+                        underdog, favourite = away, home
+                        upset_p = p["away_win"]
+                        elo_gap = elo_h - elo_a
+
+                    upset_rows.append({
+                        "Match": f"{home} vs {away}",
+                        "Favourite": favourite,
+                        "Underdog": underdog,
+                        "Elo Gap": int(elo_gap),
+                        "Upset Prob": round(upset_p * 100, 1),
+                        "Underdog xG": round((p["home_xg"] if underdog == home else p["away_xg"]), 2),
+                    })
+                except Exception:
+                    continue
+
+            if upset_rows:
+                upset_df = pd.DataFrame(upset_rows).sort_values("Upset Prob", ascending=False)
+
+                def _color_upset(val):
+                    if isinstance(val, (int, float)):
+                        if val >= 30:
+                            return "color:#00c853;font-weight:700;"
+                        if val >= 20:
+                            return "color:#ffd600;font-weight:700;"
+                    return ""
+
+                s = upset_df.style
+                styled_upset = s.map(_color_upset, subset=["Upset Prob"]) \
+                               if hasattr(s, "map") \
+                               else s.applymap(_color_upset, subset=["Upset Prob"])
+                st.dataframe(styled_upset, width="stretch", hide_index=True)
+
+                big_upsets = upset_df[upset_df["Upset Prob"] >= 25]
+                if not big_upsets.empty:
+                    st.warning(
+                        f"⚠️ {len(big_upsets)} upset alert(s): "
+                        + ", ".join(
+                            f"{r['Underdog']} vs {r['Favourite']} ({r['Upset Prob']:.0f}%)"
+                            for _, r in big_upsets.iterrows()
+                        )
+                    )
+            else:
+                st.info("No upcoming fixture data available for upset analysis.")
+        else:
+            st.info("No upcoming fixture data available.")
+    except Exception as e:
+        st.info(f"Upset Watch requires upcoming fixture data. ({e})")
 
     # ── Share card ───────────────────────────────────────────────────────────
     st.divider()

@@ -1,0 +1,3 @@
+[submodule "external/international_results"]
+	path = external/international_results
+	url = https://github.com/martj42/international_results

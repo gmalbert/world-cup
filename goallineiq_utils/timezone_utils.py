@@ -133,33 +133,103 @@ def format_datetime_local(dt: pd.Timestamp, include_timezone: bool = True) -> st
 
 def add_browser_timezone_js():
     """
-    Add JavaScript component to detect and use browser timezone.
-    Call this once in the app initialization.
+    No-op stub kept for backward compatibility.
+    Timezone is now selected via the sidebar selector (get_user_timezone).
     """
-    st.markdown(
-        """
-        <script>
-        // Detect browser timezone and store in localStorage
-        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        localStorage.setItem('userTimezone', userTimezone);
-        
-        // Function to convert UTC to local time
-        function convertUTCToLocal(utcDateString) {
-            const date = new Date(utcDateString);
-            return date.toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-                timeZoneName: 'short'
-            });
-        }
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
+    pass
+
+
+def get_user_timezone() -> str:
+    """
+    Return the user-selected IANA timezone from the sidebar selector.
+    Renders a compact dropdown in st.sidebar the first time it is called.
+    Defaults to 'UTC'.
+    """
+    _key = "_user_tz"
+    # Common zones covering WC host countries + popular viewer zones
+    _zones = [
+        "UTC",
+        "America/New_York",       # ET  (NYC, Boston, Miami, Atlanta)
+        "America/Chicago",        # CT  (Dallas, Houston, KC)
+        "America/Denver",         # MT
+        "America/Los_Angeles",    # PT  (LA, SF, Seattle)
+        "America/Vancouver",      # PT  (Vancouver host city)
+        "America/Mexico_City",    # CT  (Guadalajara, Monterrey host cities)
+        "America/Toronto",        # ET  (Toronto host city)
+        "America/Sao_Paulo",      # BRT (Brazil fans)
+        "America/Buenos_Aires",   # ART (Argentina fans)
+        "Europe/London",          # BST
+        "Europe/Paris",           # CEST
+        "Africa/Casablanca",      # WET (Morocco fans)
+        "Asia/Tokyo",             # JST
+        "Asia/Seoul",             # KST
+        "Australia/Sydney",       # AEST
+    ]
+    _labels = {
+        "UTC": "🌐 UTC",
+        "America/New_York": "🗽 Eastern (ET)",
+        "America/Chicago": "🤠 Central (CT)",
+        "America/Denver": "⛰️ Mountain (MT)",
+        "America/Los_Angeles": "🌴 Pacific (PT)",
+        "America/Vancouver": "🍁 Vancouver (PT)",
+        "America/Mexico_City": "🇲🇽 Mexico City (CT)",
+        "America/Toronto": "🇨🇦 Toronto (ET)",
+        "America/Sao_Paulo": "🇧🇷 São Paulo (BRT)",
+        "America/Buenos_Aires": "🇦🇷 Buenos Aires (ART)",
+        "Europe/London": "🇬🇧 London (BST)",
+        "Europe/Paris": "🇪🇺 Paris (CEST)",
+        "Africa/Casablanca": "🇲🇦 Casablanca (WET)",
+        "Asia/Tokyo": "🇯🇵 Tokyo (JST)",
+        "Asia/Seoul": "🇰🇷 Seoul (KST)",
+        "Australia/Sydney": "🇦🇺 Sydney (AEST)",
+    }
+    current = st.session_state.get(_key, "UTC")
+    with st.sidebar:
+        selected = st.selectbox(
+            "🕒 Your Timezone",
+            options=_zones,
+            index=_zones.index(current) if current in _zones else 0,
+            format_func=lambda z: _labels.get(z, z),
+            key=_key,
+        )
+    return selected
+
+
+def get_browser_timezone() -> Optional[str]:
+    """Return the user-selected timezone from session state, or None for UTC."""
+    tz = st.session_state.get("_user_tz")
+    if tz and tz != "UTC":
+        return tz
+    # Also check the selectbox widget key directly
+    tz2 = st.session_state.get("_user_tz")
+    return tz2 if tz2 and tz2 != "UTC" else None
+
+
+def format_match_time_local(dt: pd.Timestamp) -> str:
+    """
+    Format a UTC timestamp in the browser's local timezone when available,
+    falling back to UTC.  Returns e.g. "06/14 3:00 PM EDT" or "06/14 7:00 PM UTC".
+    """
+    if pd.isna(dt):
+        return "TBD"
+    try:
+        if hasattr(dt, "to_pydatetime"):
+            dt = dt.to_pydatetime()
+        tz_name = get_browser_timezone()
+        if tz_name:
+            import zoneinfo
+            local_tz = zoneinfo.ZoneInfo(tz_name)
+            local_dt = dt.astimezone(local_tz)
+            tz_abbr = local_dt.strftime("%Z")
+            time_str = local_dt.strftime("%m/%d %I:%M %p ").lstrip("0") + tz_abbr
+            return time_str
+        # Fallback: UTC
+        return dt.strftime("%m/%d %I:%M %p UTC").lstrip("0")
+    except Exception:
+        try:
+            return dt.strftime("%m/%d %I:%M %p UTC")
+        except Exception:
+            return "TBD"
 
 
 def format_match_time_friendly(dt: pd.Timestamp) -> str:
