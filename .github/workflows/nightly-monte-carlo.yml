@@ -46,7 +46,6 @@ jobs:
         env:
           BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-          THE_SPORTS_DB_KEY: ${{ secrets.THE_SPORTS_DB_KEY }}
         run: |
           python scripts/run_monte_carlo.py
 
