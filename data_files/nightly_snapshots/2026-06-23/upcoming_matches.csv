@@ -1,0 +1,11 @@
+source,season,tournament,date,round,group,home_team,away_team,home_code,away_code,home_goals,away_goals,home_goals_ht,away_goals_ht,venue,city,status,home_xg,away_xg
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-24 00:00:00+00:00,Matchday 14,Group A,Czech Republic,Mexico,,,,,,,Mexico City,Mexico City,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-24 00:00:00+00:00,Matchday 14,Group C,Morocco,Haiti,,,,,,,Atlanta,Atlanta,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-24 00:00:00+00:00,Matchday 14,Group C,Scotland,Brazil,,,,,,,Miami (Miami Gardens),Miami (Miami Gardens),scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-24 00:00:00+00:00,Matchday 14,Group B,Bosnia & Herzegovina,Qatar,,,,,,,Seattle,Seattle,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-24 00:00:00+00:00,Matchday 14,Group B,Switzerland,Canada,,,,,,,Vancouver,Vancouver,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-24 00:00:00+00:00,Matchday 14,Group A,South Africa,South Korea,,,,,,,Monterrey (Guadalupe),Monterrey (Guadalupe),scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-25 00:00:00+00:00,Matchday 15,Group D,Turkey,USA,,,,,,,Los Angeles (Inglewood),Los Angeles (Inglewood),scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-25 00:00:00+00:00,Matchday 15,Group F,Tunisia,Netherlands,,,,,,,Kansas City,Kansas City,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-25 00:00:00+00:00,Matchday 15,Group D,Paraguay,Australia,,,,,,,San Francisco Bay Area (Santa Clara),San Francisco Bay Area (Santa Clara),scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-06-25 00:00:00+00:00,Matchday 15,Group F,Japan,Sweden,,,,,,,Dallas (Arlington),Dallas (Arlington),scheduled,,
