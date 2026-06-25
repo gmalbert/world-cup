@@ -565,11 +565,12 @@ class ESPNClient:
             away = next((t for t in comps_teams if t.get("homeAway") == "away"), {})
             status = event.get("status", {}).get("type", {})
             season_type = event.get("season", {}).get("type", {})
+            season_type_name = season_type.get("name", "") if isinstance(season_type, dict) else str(season_type)
             rows.append({
                 "source": "espn",
                 "season": 2026,
                 "date": event.get("date"),
-                "round": season_type.get("name", ""),
+                "round": season_type_name,
                 "group": "",
                 "home_team": home.get("team", {}).get("displayName", ""),
                 "away_team": away.get("team", {}).get("displayName", ""),
