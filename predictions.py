@@ -177,8 +177,13 @@ def _build_theme_css(t: dict) -> str:
     """
 
 
-# ── Auto-detect theme from local time (day = 7am–7pm) ────────────────────────
-_hour = datetime.now().hour
+# ── Auto-detect theme from browser-local time (day = 7am–7pm) ────────────────
+try:
+    from zoneinfo import ZoneInfo
+    _browser_timezone = getattr(st.context, "timezone", None) or "UTC"
+    _hour = datetime.now(ZoneInfo(_browser_timezone)).hour
+except Exception:
+    _hour = datetime.now(timezone.utc).hour
 _is_day = 7 <= _hour < 19
 st.session_state["_is_day"] = _is_day
 _active_theme = THEMES["Sky Blue" if _is_day else "Deep Ocean"]
@@ -360,21 +365,40 @@ def home_page():
     if upcoming is not None and not upcoming.empty:
         # Use pre-computed cache when available; fall back to live prediction
         if _using_cache and _predictions_cache.get("match_predictions"):
-            pred_rows = _predictions_cache["match_predictions"][:16]
-            # Merge date/venue from upcoming snapshot (cache may be a day old)
+            # Only reuse entries that still exist in the current fixture set.
+            # Keeping the cache's first 16 rows made the page show yesterday's
+            # teams after the knockout bracket advanced.
             _up_map = {}
             for _, _ur in upcoming.iterrows():
                 _key = (str(_ur.get("home_team","")), str(_ur.get("away_team","")))
                 _up_map[_key] = _ur
-            for pr in pred_rows:
+            pred_rows = []
+            for _cached in _predictions_cache["match_predictions"]:
+                pr = dict(_cached)
                 _ur = _up_map.get((pr.get("home_team",""), pr.get("away_team","")))
                 if _ur is not None:
                     pr["date"]  = _ur.get("date", pr.get("date"))
                     pr["venue"] = _ur.get("venue", pr.get("venue",""))
                     pr["city"]  = _ur.get("city",  pr.get("city",""))
+                    pred_rows.append(pr)
+
+            # Compute newly resolved fixtures immediately instead of waiting
+            # for the next nightly cache build.
+            cached_keys = {
+                (pr.get("home_team", ""), pr.get("away_team", "")) for pr in pred_rows
+            }
+            missing = upcoming[
+                ~upcoming.apply(
+                    lambda row: (str(row.get("home_team", "")), str(row.get("away_team", ""))) in cached_keys,
+                    axis=1,
+                )
+            ]
         else:
             pred_rows = []
-            for _, row in upcoming.iterrows():
+            missing = upcoming
+
+        if missing is not None and not missing.empty:
+            for _, row in missing.iterrows():
                 home = str(row.get("home_team", ""))
                 away = str(row.get("away_team", ""))
                 if home and away:
@@ -389,6 +413,7 @@ def home_page():
                         "home_elo": p["home_elo"], "away_elo": p["away_elo"],
                         "ou": p.get("ou", {}),
                     })
+        pred_rows = pred_rows[:16]
         if pred_rows:
             _cache_age = ""
             if _using_cache:
@@ -648,18 +673,21 @@ def home_page():
         "Probabilities ≥ 25 % trigger an alert."
     )
 
-    # Prefer pre-computed cache; format dates in user's local timezone
-    if _using_cache and _predictions_cache.get("upset_watch"):
+    # Use current fixtures so kickoff times and newly resolved teams stay fresh;
+    # the date-only cache is only an offline fallback.
+    if (upcoming is None or upcoming.empty) and _using_cache and _predictions_cache.get("upset_watch"):
         _upset_raw = _predictions_cache["upset_watch"]
         _upset_rows = []
         for _ur2 in _upset_raw:
             _raw_date = _ur2.get("date", "TBD")
+            _dt2 = pd.NaT
             try:
                 _dt2 = pd.to_datetime(_raw_date, utc=True, errors="coerce")
                 _date_str2 = format_match_time_local(_dt2) if pd.notna(_dt2) else _raw_date
             except Exception:
                 _date_str2 = _raw_date
             _upset_rows.append({
+                "_Sort Date": _dt2,
                 "Date": _date_str2,
                 "Match": _ur2["match"],
                 "Favourite": _ur2["favourite"],
@@ -688,6 +716,7 @@ def home_page():
                     _gap = _elo_h - _elo_a
                 _raw_dt = _urow.get("date")
                 _date_str = "TBD"
+                _dt = pd.NaT
                 if _raw_dt is not None:
                     try:
                         _dt = pd.to_datetime(_raw_dt, utc=True, errors="coerce")
@@ -696,6 +725,7 @@ def home_page():
                     except Exception:
                         pass
                 _upset_rows.append({
+                    "_Sort Date": _dt if pd.notna(_dt) else pd.NaT,
                     "Date": _date_str,
                     "Match": f"{_uh} vs {_ua}",
                     "Favourite": _fav,
@@ -710,7 +740,10 @@ def home_page():
         _upset_rows = []
 
     if _upset_rows:
-            _upset_df = pd.DataFrame(_upset_rows).sort_values("Upset %", ascending=False)
+            _upset_df = pd.DataFrame(_upset_rows).sort_values(
+                "_Sort Date", ascending=False, na_position="last"
+            )
+            _display_upset_df = _upset_df.drop(columns=["_Sort Date"])
 
             def _upset_col(val):
                 # val is now a string like "31.0" — compare numerically
@@ -722,7 +755,7 @@ def home_page():
                     pass
                 return ""
 
-            _su = _upset_df.style
+            _su = _display_upset_df.style
             _styled_u = _su.map(_upset_col, subset=["Upset %"]) \
                         if hasattr(_su, "map") \
                         else _su.applymap(_upset_col, subset=["Upset %"])
