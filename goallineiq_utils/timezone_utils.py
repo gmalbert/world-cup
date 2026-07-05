@@ -65,9 +65,15 @@ def assign_realistic_match_times(df: pd.DataFrame) -> pd.DataFrame:
     
     df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
     
-    # Group by date to assign different times to matches on the same day
+    # Group by date to assign different times only where the source omitted a
+    # kickoff. Never overwrite a real time supplied by the fixture provider.
     for date_val, group_indices in df.groupby(df["date"].dt.date).groups.items():
-        for idx, (match_idx, time_slot) in enumerate(zip(group_indices, WC_MATCH_TIMES_LOCAL * 10)):
+        missing_time_indices = [
+            match_idx for match_idx in group_indices
+            if df.loc[match_idx, "date"].hour == 0
+            and df.loc[match_idx, "date"].minute == 0
+        ]
+        for match_idx, time_slot in zip(missing_time_indices, WC_MATCH_TIMES_LOCAL * 10):
             # Get venue timezone offset
             venue = df.loc[match_idx, "venue"] if "venue" in df.columns else None
             tz_offset = VENUE_TIMEZONES.get(str(venue), -5)  # Default to Central Time
@@ -87,9 +93,9 @@ def assign_realistic_match_times(df: pd.DataFrame) -> pd.DataFrame:
             
             # Adjust date if we wrapped around midnight
             if local_hour_utc < 0:
-                new_datetime = new_datetime + timedelta(days=1)
-            elif local_hour_utc >= 24:
                 new_datetime = new_datetime - timedelta(days=1)
+            elif local_hour_utc >= 24:
+                new_datetime = new_datetime + timedelta(days=1)
             
             df.loc[match_idx, "date"] = new_datetime
     
@@ -112,18 +118,11 @@ def format_datetime_local(dt: pd.Timestamp, include_timezone: bool = True) -> st
         return "TBD"
     
     try:
-        # Convert to Python datetime
-        if hasattr(dt, 'to_pydatetime'):
-            dt = dt.to_pydatetime()
-        
-        # For now, display in UTC with clear label
-        # In production, use JavaScript to convert to browser timezone
+        dt = _to_user_local(dt)
         formatted = dt.strftime("%b %d, %Y %I:%M %p")
         
         if include_timezone:
-            # Get user's timezone offset from browser using streamlit
-            # This is a placeholder - actual implementation would use JS
-            return f"{formatted} UTC"
+            return f"{formatted} {dt.strftime('%Z')}"
         else:
             return formatted
             
@@ -143,7 +142,7 @@ def get_user_timezone() -> str:
     """
     Return the user-selected IANA timezone from the sidebar selector.
     Renders a compact dropdown in st.sidebar the first time it is called.
-    Defaults to 'UTC'.
+    Defaults to the browser's IANA timezone, with a manual override available.
     """
     _key = "_user_tz"
     # Common zones covering WC host countries + popular viewer zones
@@ -183,7 +182,13 @@ def get_user_timezone() -> str:
         "Asia/Seoul": "🇰🇷 Seoul (KST)",
         "Australia/Sydney": "🇦🇺 Sydney (AEST)",
     }
-    current = st.session_state.get(_key, "UTC")
+    try:
+        detected = getattr(st.context, "timezone", None) or "UTC"
+    except Exception:
+        detected = "UTC"
+    current = st.session_state.get(_key, detected)
+    if current not in _zones:
+        _zones.append(current)
     with st.sidebar:
         selected = st.selectbox(
             "🕒 Your Timezone",
@@ -196,13 +201,24 @@ def get_user_timezone() -> str:
 
 
 def get_browser_timezone() -> Optional[str]:
-    """Return the user-selected timezone from session state, or None for UTC."""
+    """Return the selected timezone, defaulting to the browser's timezone."""
     tz = st.session_state.get("_user_tz")
-    if tz and tz != "UTC":
+    if tz:
         return tz
-    # Also check the selectbox widget key directly
-    tz2 = st.session_state.get("_user_tz")
-    return tz2 if tz2 and tz2 != "UTC" else None
+    try:
+        return getattr(st.context, "timezone", None) or "UTC"
+    except Exception:
+        return "UTC"
+
+
+def _to_user_local(dt):
+    """Convert an aware/naive UTC datetime to the browser-selected timezone."""
+    if hasattr(dt, "to_pydatetime"):
+        dt = dt.to_pydatetime()
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    import zoneinfo
+    return dt.astimezone(zoneinfo.ZoneInfo(get_browser_timezone() or "UTC"))
 
 
 def format_match_time_local(dt: pd.Timestamp) -> str:
@@ -213,18 +229,9 @@ def format_match_time_local(dt: pd.Timestamp) -> str:
     if pd.isna(dt):
         return "TBD"
     try:
-        if hasattr(dt, "to_pydatetime"):
-            dt = dt.to_pydatetime()
-        tz_name = get_browser_timezone()
-        if tz_name:
-            import zoneinfo
-            local_tz = zoneinfo.ZoneInfo(tz_name)
-            local_dt = dt.astimezone(local_tz)
-            tz_abbr = local_dt.strftime("%Z")
-            time_str = local_dt.strftime("%m/%d %I:%M %p ").lstrip("0") + tz_abbr
-            return time_str
-        # Fallback: UTC
-        return dt.strftime("%m/%d %I:%M %p UTC").lstrip("0")
+        local_dt = _to_user_local(dt)
+        tz_abbr = local_dt.strftime("%Z")
+        return local_dt.strftime("%m/%d %I:%M %p ").lstrip("0") + tz_abbr
     except Exception:
         try:
             return dt.strftime("%m/%d %I:%M %p UTC")
@@ -245,10 +252,8 @@ def format_match_time_friendly(dt: pd.Timestamp) -> str:
         return "Time TBD"
     
     try:
-        if hasattr(dt, 'to_pydatetime'):
-            dt = dt.to_pydatetime()
-        
-        now = datetime.now(timezone.utc)
+        dt = _to_user_local(dt)
+        now = datetime.now(dt.tzinfo)
         diff_days = (dt.date() - now.date()).days
         
         time_str = dt.strftime("%I:%M %p").lstrip("0")  # Remove leading zero

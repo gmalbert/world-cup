@@ -6,6 +6,7 @@ Covers World Cup tournaments: 2010, 2014, 2018, 2022, 2026.
 """
 import os
 import json
+import re
 import requests
 import pandas as pd
 import numpy as np
@@ -49,7 +50,7 @@ WC_NAMES = {
 # OPENFOOTBALL — free historical data (2010, 2014, 2018, 2022)
 # ══════════════════════════════════════════════════════════════════════════════
 
-@st.cache_data(ttl=86400, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def fetch_openfootball_wc(year: int) -> Optional[Dict]:
     """Fetch World Cup data from openfootball GitHub. No API key required."""
     url = f"{OPENFOOTBALL_BASE}/{year}/worldcup.json"
@@ -59,6 +60,87 @@ def fetch_openfootball_wc(year: int) -> Optional[Dict]:
         return resp.json()
     except Exception:
         return None
+
+
+_BRACKET_SLOT_RE = re.compile(r"^[WL](\d+)$", re.IGNORECASE)
+_OPENFOOTBALL_TIME_RE = re.compile(
+    r"^(\d{1,2}):(\d{2})\s+UTC([+-]\d{1,2})(?::?(\d{2}))?$",
+    re.IGNORECASE,
+)
+
+
+def _openfootball_kickoff(match: Dict):
+    """Return an offset-aware UTC kickoff when openfootball supplies a time."""
+    date_value = match.get("date")
+    time_value = str(match.get("time", "") or "").strip()
+    parsed_time = _OPENFOOTBALL_TIME_RE.fullmatch(time_value)
+    if not date_value or not parsed_time:
+        return date_value
+    try:
+        hour, minute = int(parsed_time.group(1)), int(parsed_time.group(2))
+        offset_hours = int(parsed_time.group(3))
+        offset_minutes = int(parsed_time.group(4) or 0)
+        if offset_hours < 0:
+            offset_minutes *= -1
+        venue_tz = timezone(timedelta(hours=offset_hours, minutes=offset_minutes))
+        kickoff = datetime.strptime(str(date_value), "%Y-%m-%d").replace(
+            hour=hour, minute=minute, tzinfo=venue_tz
+        )
+        return kickoff.astimezone(timezone.utc).isoformat()
+    except (TypeError, ValueError):
+        return date_value
+
+
+def _resolve_openfootball_bracket(matches: List[Dict]) -> List[Dict]:
+    """Replace W76/L76-style slots once the referenced match has a winner.
+
+    Openfootball numbers matches by their one-based position in the feed.  A
+    knockout winner is taken from penalties first, then extra time, then full
+    time.  Unplayed slots remain unresolved and are excluded from predictions.
+    """
+    outcomes: Dict[int, Tuple[str, str]] = {}
+    resolved: List[Dict] = []
+
+    for match_number, raw_match in enumerate(matches, start=1):
+        match = dict(raw_match)
+        for field in ("team1", "team2"):
+            value = str(match.get(field, "") or "").strip()
+            slot = _BRACKET_SLOT_RE.fullmatch(value)
+            if slot:
+                prior = outcomes.get(int(slot.group(1)))
+                if prior:
+                    match[field] = prior[0] if value.upper().startswith("W") else prior[1]
+
+        team1 = str(match.get("team1", "") or "").strip()
+        team2 = str(match.get("team2", "") or "").strip()
+        score = match.get("score") or {}
+        deciding_score = next(
+            (score.get(key) for key in ("p", "et", "ft")
+             if isinstance(score.get(key), list) and len(score[key]) >= 2
+             and score[key][0] is not None and score[key][1] is not None
+             and score[key][0] != score[key][1]),
+            None,
+        )
+        if deciding_score and team1 and team2:
+            if deciding_score[0] > deciding_score[1]:
+                outcomes[match_number] = (team1, team2)
+            else:
+                outcomes[match_number] = (team2, team1)
+        resolved.append(match)
+
+    return resolved
+
+
+def _resolved_fixture_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep only fixtures whose participants are actual named teams."""
+    if df is None or df.empty:
+        return pd.DataFrame() if df is None else df
+    if not {"home_team", "away_team"}.issubset(df.columns):
+        return pd.DataFrame()
+    home = df["home_team"].fillna("").astype(str).str.strip()
+    away = df["away_team"].fillna("").astype(str).str.strip()
+    placeholders = home.str.fullmatch(_BRACKET_SLOT_RE) | away.str.fullmatch(_BRACKET_SLOT_RE)
+    return df[home.ne("") & away.ne("") & ~placeholders].copy()
 
 
 def _parse_openfootball(data: Dict, year: int) -> pd.DataFrame:
@@ -72,7 +154,7 @@ def _parse_openfootball(data: Dict, year: int) -> pd.DataFrame:
         return pd.DataFrame()
 
     rows = []
-    for m in data.get("matches", []):
+    for m in _resolve_openfootball_bracket(data.get("matches", [])):
         score = m.get("score") or {}
         ft    = score.get("ft", [None, None])
         ht    = score.get("ht", [None, None])
@@ -82,7 +164,7 @@ def _parse_openfootball(data: Dict, year: int) -> pd.DataFrame:
             "source":        "openfootball",
             "season":        year,
             "tournament":    WC_NAMES.get(year, str(year)),
-            "date":          m.get("date"),
+            "date":          _openfootball_kickoff(m),
             "round":         m.get("round", ""),
             "group":         m.get("group", m.get("round", "")),
             "home_team":     m.get("team1", ""),
@@ -811,8 +893,11 @@ def get_upcoming_matches(n: int = 20) -> pd.DataFrame:
     if df is not None and not df.empty and "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
         now = pd.Timestamp.utcnow()
-        upcoming = df[df["status"].isin(["scheduled", "NS", "TBD", ""])
-                      | df["date"].gt(now)]
+        upcoming = df[
+            df["date"].gt(now)
+            | (df["date"].isna() & df["status"].isin(["scheduled", "NS", "TBD", ""]))
+        ]
+        upcoming = _resolved_fixture_rows(upcoming)
         upcoming = upcoming.sort_values("date")
         if not upcoming.empty:
             return upcoming.head(n)
@@ -821,34 +906,42 @@ def get_upcoming_matches(n: int = 20) -> pd.DataFrame:
     df = apf_client.get_fixtures(2026, next_n=n)
     if df is not None and not df.empty and "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
-        return df.sort_values("date").head(n)
-
-    # 3. Nightly snapshot (most reliable during tournament)
-    df = _latest_snapshot_df("upcoming_matches.csv")
-    if not df.empty and "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
-        now = pd.Timestamp.utcnow()
-        upcoming = df[df["date"].isna() | df["date"].gt(now)].sort_values("date")
+        upcoming = _resolved_fixture_rows(df[df["date"].gt(pd.Timestamp.utcnow())])
         if not upcoming.empty:
-            return upcoming.head(n)
+            return upcoming.sort_values("date").head(n)
 
-    # 4. ESPN schedule as last resort
+    # 3. ESPN schedule (live and keyless)
     df = espn_client.get_schedule()
     if df is not None and not df.empty and "date" in df.columns:
         df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
         now = pd.Timestamp.utcnow()
-        upcoming = df[df["date"] >= now].sort_values("date")
+        upcoming = _resolved_fixture_rows(df[df["date"] >= now]).sort_values("date")
         if not upcoming.empty:
             return upcoming.head(n)
 
-    # 5. openfootball fallback
+    # 4. Current openfootball feed. Prefer it to a dated local snapshot: the
+    # feed fills knockout participants as results become known.
     raw = fetch_openfootball_wc(2026)
     if raw:
         df = _parse_openfootball(raw, 2026)
         if not df.empty and "date" in df.columns:
             df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
             now = pd.Timestamp.utcnow()
-            return df[df["date"] >= now].sort_values("date").head(n)
+            upcoming = _resolved_fixture_rows(df[df["date"] >= now]).sort_values("date")
+            if not upcoming.empty:
+                return upcoming.head(n)
+
+    # 5. Nightly snapshot is an offline fallback only. Old snapshots commonly
+    # contain W76/W78 bracket slots, so never expose those as team names.
+    df = _latest_snapshot_df("upcoming_matches.csv")
+    if not df.empty and "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce", utc=True)
+        now = pd.Timestamp.utcnow()
+        upcoming = _resolved_fixture_rows(
+            df[df["date"].isna() | df["date"].gt(now)]
+        ).sort_values("date")
+        if not upcoming.empty:
+            return upcoming.head(n)
 
     return pd.DataFrame()
 
