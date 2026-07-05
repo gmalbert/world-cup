@@ -11,7 +11,7 @@ import requests
 import pandas as pd
 import numpy as np
 from typing import Optional, Dict, List, Any, Tuple
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
