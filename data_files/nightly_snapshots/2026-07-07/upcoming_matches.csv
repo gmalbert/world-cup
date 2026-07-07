@@ -1,0 +1,6 @@
+source,season,tournament,date,round,group,home_team,away_team,home_code,away_code,home_goals,away_goals,home_goals_ht,away_goals_ht,venue,city,status,home_xg,away_xg
+openfootball,2026,USA/Canada/Mexico 2026,2026-07-07 16:00:00+00:00,Round of 16,Round of 16,Argentina,Egypt,,,,,,,Atlanta,Atlanta,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-07-07 20:00:00+00:00,Round of 16,Round of 16,Switzerland,Colombia,,,,,,,Vancouver,Vancouver,scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-07-09 20:00:00+00:00,Quarter-final,Quarter-final,France,Morocco,,,,,,,Boston (Foxborough),Boston (Foxborough),scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-07-10 19:00:00+00:00,Quarter-final,Quarter-final,Spain,Belgium,,,,,,,Los Angeles (Inglewood),Los Angeles (Inglewood),scheduled,,
+openfootball,2026,USA/Canada/Mexico 2026,2026-07-11 21:00:00+00:00,Quarter-final,Quarter-final,Norway,England,,,,,,,Miami (Miami Gardens),Miami (Miami Gardens),scheduled,,
