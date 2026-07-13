@@ -1,0 +1,20 @@
+{
+  "generated_at_utc": "2026-07-13T04:18:39.433822+00:00",
+  "window_start": "2026-06-04",
+  "window_end": "2026-07-26",
+  "snapshot_date": "2026-07-13",
+  "counts": {
+    "matches_all": 360,
+    "upcoming_matches": 1,
+    "standings": 48,
+    "top_scorers": 0,
+    "odds": 0
+  },
+  "files": [
+    "matches_all",
+    "upcoming_matches",
+    "standings",
+    "top_scorers",
+    "odds"
+  ]
+}
